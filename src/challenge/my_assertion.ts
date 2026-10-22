@@ -1,5 +1,5 @@
 /**
- * YOUR TURN — write the assertion for step 9, then run:   npm run step_9_challenge
+ * YOUR TURN — write the assertion for step 9, then run:   yarn step_9_challenge
  *
  * The scenario: you own a Vault (see src/lib/contracts.ts). Its storage looks like this:
  *

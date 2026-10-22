@@ -5,7 +5,7 @@ export const title = (t: string) => console.log(`\n\x1b[1m━━ ${t} ━━\x1b
 export const say = (...a: unknown[]) => console.log(...a);
 export const ok = (t: string) => console.log(`\x1b[32m✔ ${t}\x1b[0m`);
 export const bad = (t: string) => console.log(`\x1b[31m✘ ${t}\x1b[0m`);
-export const next = (cmd: string) => console.log(`\nNext: \x1b[36mnpm run ${cmd}\x1b[0m`);
+export const next = (cmd: string) => console.log(`\nNext: \x1b[36myarn ${cmd}\x1b[0m`);
 export const explorer = (hash: string) => `${EXPLORER_URL}/tx/${hash}`;
 
 const MODE_NAME = Object.fromEntries(Object.entries(MODE).map(([k, v]) => [v, k]));

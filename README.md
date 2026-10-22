@@ -8,26 +8,26 @@ Foundry, or compile anything by hand: every step is one TypeScript file you can 
 
 ## Quick start
 
-Needs Node.js ≥ 20.12.
+Needs Node.js ≥ 20.12 and [Yarn 1](https://classic.yarnpkg.com) (`corepack enable`, or `npm i -g yarn`).
 
 ```bash
-npm install
-npm run step_1_check
+yarn install
+yarn step_1_check
 ```
 
 Then run the steps in order. Each one ends by telling you the next command.
 
 | # | Command | You learn |
 |---|---------|-----------|
-| 1 | `npm run step_1_check` | Key + faucet + what a frame transaction (EIP-8141) looks like |
-| 2 | `npm run step_2_setup` | Deploys the playground: a token, an honest dex, two malicious ones |
-| 3 | `npm run step_3_blind_signing` | The problem: identical calldata, one dex robs you |
-| 4 | `npm run step_4_eth_assertion` | Your first POST_TX assertion: ETH spend limit, balance diffs, the gas pre-charge |
-| 5 | `npm run step_5_token_assertion` | Reading events with `TXTRACE` and `EVENTDATACOPY` |
-| 6 | `npm run step_6_state_assertion` | Events can lie: asserting on storage diffs instead |
-| 7 | `npm run step_7_compose` | Several assertions from different authors in one tx |
-| 8 | `npm run step_8_gas_griefing` | Attacking the assertion: padding the log to burn its gas |
-| 9 | `npm run step_9_challenge` | **Your turn.** Edit `src/challenge/my_assertion.ts` (`step_9_solution` shows an answer) |
+| 1 | `yarn step_1_check` | Key + faucet + what a frame transaction (EIP-8141) looks like |
+| 2 | `yarn step_2_setup` | Deploys the playground: a token, an honest dex, two malicious ones |
+| 3 | `yarn step_3_blind_signing` | The problem: identical calldata, one dex robs you |
+| 4 | `yarn step_4_eth_assertion` | Your first POST_TX assertion: ETH spend limit, balance diffs, the gas pre-charge |
+| 5 | `yarn step_5_token_assertion` | Reading events with `TXTRACE` and `EVENTDATACOPY` |
+| 6 | `yarn step_6_state_assertion` | Events can lie: asserting on storage diffs instead |
+| 7 | `yarn step_7_compose` | Several assertions from different authors in one tx |
+| 8 | `yarn step_8_gas_griefing` | Attacking the assertion: padding the log to burn its gas |
+| 9 | `yarn step_9_challenge` | **Your turn.** Edit `src/challenge/my_assertion.ts` (`step_9_solution` shows an answer) |
 
 ## The 60-second idea
 
@@ -52,6 +52,11 @@ current text. The workshop follows **what the devnet does**:
 | `TXDIFF` (0xB8) | exists, **deliberately unused here** | removed from the spec |
 
 If the devnet is upgraded, the param numbers in `src/lib/compile.ts` (`YUL_PRELUDE`) are the only place to update.
+
+## Checking your checkout
+
+`yarn verify` typechecks and runs an offline wiring check (compiles every contract and assertion, tests the
+frame-transaction codec). It never touches the devnet. CI runs it on every push.
 
 ## How the code is organised
 

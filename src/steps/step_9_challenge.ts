@@ -1,8 +1,8 @@
 /**
  * STEP 9 — Challenge: write your own assertion.
  *
- *   npm run step_9_challenge     test the assertion you wrote in src/challenge/my_assertion.ts
- *   npm run step_9_solution      run the reference solution instead
+ *   yarn step_9_challenge     test the assertion you wrote in src/challenge/my_assertion.ts
+ *   yarn step_9_solution      run the reference solution instead
  *
  * We check your assertion twice with free dry-runs (nothing is sent until you get both right):
  *   ✔ setSecret(42)               must be allowed
