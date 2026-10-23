@@ -1,7 +1,7 @@
 /**
  * STEP 2 — Build the playground.
  *
- * We deploy a tiny DeFi world (source in src/lib/contracts.ts):
+ * We deploy a tiny DeFi world (source in contracts/Playground.sol):
  *   - USDW        a normal ERC-20 token
  *   - HonestDex   swap(token): you send ETH, you get 1000 tokens per wei. Fair.
  *   - EvilDex     swap(token): *identical calldata*, but it short-changes you and

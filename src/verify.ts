@@ -1,8 +1,9 @@
 /**
  * Offline wiring check (no network, no funds): `yarn verify`. Run by CI on every push.
  *
- *   - every demo contract and the step 10 challenge files compile
- *   - every TXPARAM / FRAMEPARAM / TXTRACE param name in the Yul prelude is usable and the opcodes assemble to 0xB0 / 0xB1 / 0xB3 / 0xB6 / 0xB7
+ *   - every Solidity contract and assertion in `contracts/` compiles cleanly
+ *   - `contracts/shared/HegotaLibrary.sol` oracle initcodes assemble to 0xB0 / 0xB1 / 0xB3 / 0xB6 / 0xB7
+ *     and are embedded into the compiled assertion and circuit-breaker contracts
  *   - the frame-tx codec behaves: type byte, signing is deterministic, and the signature
  *     is not part of the hash it signs
  *   - every package.json script points at a file that exists
@@ -10,10 +11,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import { keccak256, recoverAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { yul, YUL_PRELUDE } from "./lib/compile.js";
-import { HonestDexC, EvilDexC, SpammerC, LendingPoolC, TokenC, VaultC } from "./lib/contracts.js";
-import { MY_ASSERTION } from "./challenge/my_assertion.js";
-import { OWNER_UNCHANGED } from "./solutions/owner_unchanged.js";
+import { compileSol } from "./lib/compile.js";
+import {
+  EthSpendLimitAssertionC,
+  EvilDexC,
+  HonestDexC,
+  LendingPoolC,
+  NoBalanceDropsAssertionC,
+  SpammerC,
+  TokenC,
+  TokenReceiveOnlyAssertionC,
+  VaultC,
+} from "./lib/contracts.js";
 import { encodeTx, selfVerify, senderCall, postTx, sigHash, signTx, type FrameTx } from "./lib/frameTx.js";
 
 let failures = 0;
@@ -22,38 +31,48 @@ const check = (name: string, pass: boolean, detail = "") => {
   if (!pass) failures++;
 };
 
-// contracts: importing ./lib/contracts.js already compiled them; make sure each produced code
-for (const [name, c] of Object.entries({ TokenC, HonestDexC, EvilDexC, SpammerC, LendingPoolC, VaultC })) {
-  check(`${name} compiles`, c.bytecode.length > 10);
+// 1. All Solidity contracts and assertions in `contracts/` compile cleanly
+for (const [name, c] of Object.entries({
+  TokenC,
+  HonestDexC,
+  EvilDexC,
+  SpammerC,
+  VaultC,
+  LendingPoolC,
+  EthSpendLimitAssertionC,
+  TokenReceiveOnlyAssertionC,
+  NoBalanceDropsAssertionC,
+})) {
+  check(`${name} compiles`, c.bytecode.length > 10 && c.abi.length > 0);
 }
 
-// Yul: touch every prelude function so a typo in a param name is caught, and check the opcode bytes
-const paramNames = [...YUL_PRELUDE.matchAll(/function ([A-Z_]+)\(\) -> p/g)].map((m) => m[1]);
-const touchAll = paramNames.map((n) => `pop(${n}())`).join("\n");
-const all = yul(
-  "Params",
-  `${touchAll}\npop(txparam(0))\npop(framedataload(0, 0))\npop(frameparam(0, 0))\npop(txtrace(0, 0))\neventdatacopy(0, 0, 0, 0)`,
+const challengeStub = compileSol("challenge/MyVaultAssertion.sol", "MyVaultAssertion");
+const challengeSolution = compileSol("solutions/OwnerUnchangedAssertion.sol", "OwnerUnchangedAssertion");
+check("contracts/challenge/MyVaultAssertion.sol compiles", challengeStub.bytecode.length > 10);
+check("contracts/solutions/OwnerUnchangedAssertion.sol compiles", challengeSolution.bytecode.length > 10);
+
+// 2. Verify HegotaLibrary oracle initcodes (0xB6 TXTRACE, 0xB7 EVENTDATACOPY, 0xB0/0xB1/0xB3 frame opcodes)
+const txTraceRuntime = "600035602035b660005260206000f3";
+const eventDataRuntime = "6040356020356000600035b76040356000f3";
+const frameRuntime = "6020356040355f358015602057600114601b57b35b5f5260205ff35bb16014565b5050b0601456";
+
+check(
+  "HegotaLibrary embeds TXTRACE (0xB6) oracle into assertions",
+  EthSpendLimitAssertionC.bytecode.includes(txTraceRuntime) &&
+    NoBalanceDropsAssertionC.bytecode.includes(txTraceRuntime) &&
+    challengeSolution.bytecode.includes(txTraceRuntime),
 );
-check(`all ${paramNames.length} TXPARAM/FRAMEPARAM/TXTRACE param names compile`, all.bytecode.length > 10);
-check("TXPARAM assembles to 0xb0", all.bytecode.includes("b0"));
-check("FRAMEDATALOAD assembles to 0xb1", all.bytecode.includes("b1"));
-check("FRAMEPARAM assembles to 0xb3", all.bytecode.includes("b3"));
-check("TXTRACE assembles to 0xb6", all.bytecode.includes("b6"));
-check("EVENTDATACOPY assembles to 0xb7", all.bytecode.includes("b7"));
-check("step 10 challenge stub compiles", yul("Stub", MY_ASSERTION).bytecode.length > 10);
-check("step 10 solution compiles", yul("Solution", OWNER_UNCHANGED).bytecode.length > 10);
-for (const stepFile of [
-  "step_4_eth_assertion.ts",
-  "step_5_token_assertion.ts",
-  "step_6_state_assertion.ts",
-  "step_9_circuit_breaker.ts",
-]) {
-  const src = readFileSync(`src/steps/${stepFile}`, "utf8");
-  const m = src.match(/yul\("(\w+)",\s*`([\s\S]*?)`\)/);
-  check(`${stepFile} Yul assertion compiles`, Boolean(m && yul(m[1], m[2]).bytecode.length > 10));
-}
+check(
+  "HegotaLibrary embeds EVENTDATACOPY (0xB7) oracle into event assertions",
+  TokenReceiveOnlyAssertionC.bytecode.includes(eventDataRuntime) &&
+    LendingPoolC.bytecode.includes(eventDataRuntime),
+);
+check(
+  "HegotaLibrary embeds TXPARAM/FRAMEDATALOAD/FRAMEPARAM (0xB0/0xB1/0xB3) oracle into LendingPool",
+  LendingPoolC.bytecode.includes(frameRuntime),
+);
 
-// codec
+// 3. Frame transaction codec
 const key = `0x${"11".repeat(32)}` as Hex;
 const sender = privateKeyToAccount(key).address;
 const base: FrameTx = {
@@ -80,7 +99,7 @@ const recovered = await recoverAddress({
 check("signature recovers to the sender", recovered === sender);
 check("hash of the raw tx is stable", keccak256(encodeTx(signed)).length === 66);
 
-// package.json scripts
+// 4. package.json scripts
 const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts as Record<string, string>;
 for (const [name, cmd] of Object.entries(scripts)) {
   const file = cmd.match(/src\/\S+\.ts/)?.[0];

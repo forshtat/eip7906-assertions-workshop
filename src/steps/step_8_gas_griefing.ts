@@ -1,9 +1,9 @@
 /**
  * STEP 8 — Attacking the assertion itself: gas griefing.
  *
- * Our event-reading assertion (step 5) loops over EVERY event in the transaction. The attacker controls
- * the body, so the attacker controls how many events there are. Pad the body with junk events and the
- * loop gets longer and longer.
+ * Our event-reading assertion (`contracts/assertions/TokenReceiveOnlyAssertion.sol`) loops over EVERY
+ * event in the transaction. The attacker controls the body, so the attacker controls how many events
+ * there are. Pad the body with junk events and the loop gets longer and longer.
  *
  * What happens if the assertion runs out of gas? An out-of-gas halt is just a failed POST_TX frame, so
  * the body is rolled back. That is "failing closed": the attacker cannot sneak a bad tx past you this
@@ -11,30 +11,30 @@
  *
  * Two lessons:
  *   1. Budget the POST_TX frame from the *body's* gas limit. Every event costs the body ~1000 gas to
- *      emit, so a body with a given gas limit can only make so many; the assertion spends ~265 gas on each (measured below).
+ *      emit, so a body with a given gas limit can only make so many; the assertion spends ~300 gas on each (measured below).
  *   2. Prefer assertions whose cost doesn't grow with attacker-controlled data (e.g. look up one
  *      slot, don't enumerate everything).
  *
  * We send the same honest-swap-plus-300-junk-events twice: with a tight POST_TX gas limit and a roomy one.
  */
-import { encodeAbiParameters, encodeFunctionData, parseEther } from "viem";
+import { encodeFunctionData, parseEther } from "viem";
 import { deployOnce } from "../lib/chain.js";
-import { SpammerC } from "../lib/contracts.js";
+import { SpammerC, TokenReceiveOnlyAssertionC } from "../lib/contracts.js";
 import { me, resetHoldings, run, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
-import { requireState } from "../lib/state.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
 
 title("Step 8: gas griefing");
 const { usdw, honestDex } = world();
-const { tokenReceiveOnly } = requireState("tokenReceiveOnly");
+const tokenReceiveOnly = await deployOnce(me.key, "tokenReceiveOnly", TokenReceiveOnlyAssertionC.bytecode);
 const spammer = await deployOnce(me.key, "spammer", SpammerC.bytecode);
 await resetHoldings();
 
-const args = encodeAbiParameters(
-  [{ type: "address" }, { type: "address" }, { type: "uint256" }],
-  [me.address, usdw, parseEther("9.9")],
-);
+const args = encodeFunctionData({
+  abi: TokenReceiveOnlyAssertionC.abi,
+  functionName: "assertTokenReceiveOnly",
+  args: [me.address, usdw, parseEther("9.9")],
+});
 const body = [
   swapFrame(honestDex, usdw),
   senderCall(spammer, encodeFunctionData({ abi: SpammerC.abi, functionName: "spam", args: [300n] }), 0n, 600_000n),

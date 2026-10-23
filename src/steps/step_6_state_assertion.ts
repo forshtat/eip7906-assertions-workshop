@@ -11,55 +11,40 @@
  *   ② a storage-diff assertion        → blocks it
  *   ③ the storage-diff assertion on an honest swap → passes (no false alarm)
  *
- * The storage-diff assertion uses TXTRACE's slot views:
- *    SLOTS_CHANGED        how many (contract, slot) pairs changed
- *    SLOT_KEY[i]          the slot's key
- *    SLOT_BEFORE/AFTER[i] its value before the tx / right now
+ * See `contracts/assertions/NoBalanceDropsAssertion.sol`. It uses `HegotaLibrary`'s storage slot views:
+ *    STORAGE_COUNT        how many (contract, slot) pairs changed
+ *    STORAGE_SLOT[i]      the slot's key
+ *    STORAGE_BEFORE/AFTER[i] its value before the tx / right now
  *
  * An ERC-20 keeps balances in `mapping(address => uint256) balanceOf` at slot 0 (this is true for
- * OpenZeppelin tokens too), so your balance lives at keccak256(abi.encode(you, 0)) *in every token*.
+ * OpenZeppelin tokens too), so your balance lives at `keccak256(abi.encode(you, 0))` *in every token*.
  * One assertion covers every such token, without knowing their addresses in advance.
  *
  * (It is still a heuristic: a token with a different layout would slip past it. Real wallets would
  * combine several assertions. That is the subject of step 7.)
  */
-import { encodeAbiParameters, parseEther } from "viem";
+import { encodeFunctionData, parseEther } from "viem";
 import { deployOnce } from "../lib/chain.js";
-import { yul } from "../lib/compile.js";
+import { NoBalanceDropsAssertionC, TokenReceiveOnlyAssertionC } from "../lib/contracts.js";
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify } from "../lib/frameTx.js";
-import { requireState } from "../lib/state.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
 
-// ─────────────────────────────  THE ASSERTION  ─────────────────────────────
-// calldata: owner (address)
-const NO_BALANCE_DROPS = yul("NoBalanceDrops", `
-  let owner := calldataload(0)
-
-  // slot of balanceOf[owner] for any ERC-20 that keeps balances at slot 0
-  mstore(0, owner)
-  mstore(32, 0)
-  let balanceSlot := keccak256(0, 64)
-
-  let n := txtrace(SLOTS_CHANGED(), 0)
-  for { let i := 0 } lt(i, n) { i := add(i, 1) } {
-    if eq(txtrace(SLOT_KEY(), i), balanceSlot) {
-      // some contract's balanceOf[owner] changed: it may only go up
-      if lt(txtrace(SLOT_AFTER(), i), txtrace(SLOT_BEFORE(), i)) { revert(0, 0) }
-    }
-  }
-`);
-// ───────────────────────────────────────────────────────────────────────────
-
-title("Step 6: events can lie, state diffs can't");
+title("Step 6: events can lie, state diffs can't (contracts/assertions/NoBalanceDropsAssertion.sol)");
 const { usdw, honestDex, evilDexSilent } = world();
-const { tokenReceiveOnly } = requireState("tokenReceiveOnly"); // deployed by step 5
-const eventArgs = encodeAbiParameters(
-  [{ type: "address" }, { type: "address" }, { type: "uint256" }],
-  [me.address, usdw, parseEther("9.9")],
-);
-const stateArgs = encodeAbiParameters([{ type: "address" }], [me.address]);
-const stateAssertion = await deployOnce(me.key, "noBalanceDrops", NO_BALANCE_DROPS.bytecode);
+const tokenReceiveOnly = await deployOnce(me.key, "tokenReceiveOnly", TokenReceiveOnlyAssertionC.bytecode);
+const stateAssertion = await deployOnce(me.key, "noBalanceDrops", NoBalanceDropsAssertionC.bytecode);
+
+const eventArgs = encodeFunctionData({
+  abi: TokenReceiveOnlyAssertionC.abi,
+  functionName: "assertTokenReceiveOnly",
+  args: [me.address, usdw, parseEther("9.9")],
+});
+const stateArgs = encodeFunctionData({
+  abi: NoBalanceDropsAssertionC.abi,
+  functionName: "assertNoBalanceDrops",
+  args: [me.address],
+});
 
 say("\n① The fair-looking evil dex, protected only by the step 5 event assertion:");
 await resetHoldings();

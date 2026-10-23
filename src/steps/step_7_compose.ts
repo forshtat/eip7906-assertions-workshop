@@ -4,9 +4,9 @@
  * A transaction can carry several POST_TX frames. That lets independent parties each contribute a check,
  * with nobody needing to trust (or even know about) the others:
  *
- *    your wallet       → "no more than 0.011 ETH leaves"        (step 4)
- *    the dapp          → "I get my tokens, nothing leaves"       (step 5)
- *    a security vendor → "no ERC-20 balance of mine goes down"   (step 6)
+ *    your wallet       → "no more than 0.011 ETH leaves"        (step 4, EthSpendLimitAssertion.sol)
+ *    the dapp          → "I get my tokens, nothing leaves"       (step 5, TokenReceiveOnlyAssertion.sol)
+ *    a security vendor → "no ERC-20 balance of mine goes down"   (step 6, NoBalanceDropsAssertion.sol)
  *
  * Rules worth remembering:
  *   - POST_TX frames form a contiguous suffix: once one appears, every later frame must be POST_TX.
@@ -15,26 +15,51 @@
  *
  * Who makes sure the assertions are actually THERE? For a plain EOA, your wallet builds the frame list.
  * For a smart account, its VERIFY code can require specific assertion frames to be present, which is
- * the robust option: see "Security Considerations" in the EIP.
+ * the robust option: see "Security Considerations" in the EIP (and step 9 for a protocol-side version).
  */
-import { encodeAbiParameters, parseEther } from "viem";
+import { encodeFunctionData, parseEther } from "viem";
+import { deployOnce } from "../lib/chain.js";
+import {
+  ATTACKER,
+  EthSpendLimitAssertionC,
+  NoBalanceDropsAssertionC,
+  TokenReceiveOnlyAssertionC,
+} from "../lib/contracts.js";
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
-import { ATTACKER } from "../lib/contracts.js";
-import { requireState } from "../lib/state.js";
 import { say, title, next, ok } from "../lib/output.js";
 
 title("Step 7: composing assertions");
 const { usdw, honestDex, evilDexSilent } = world();
-const { ethSpendLimit, tokenReceiveOnly, noBalanceDrops } = requireState("ethSpendLimit", "tokenReceiveOnly", "noBalanceDrops");
+const ethSpendLimit = await deployOnce(me.key, "ethSpendLimit", EthSpendLimitAssertionC.bytecode);
+const tokenReceiveOnly = await deployOnce(me.key, "tokenReceiveOnly", TokenReceiveOnlyAssertionC.bytecode);
+const noBalanceDrops = await deployOnce(me.key, "noBalanceDrops", NoBalanceDropsAssertionC.bytecode);
 
 const assertions = [
-  postTx(ethSpendLimit, encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [me.address, parseEther("0.011")])),
+  postTx(
+    ethSpendLimit,
+    encodeFunctionData({
+      abi: EthSpendLimitAssertionC.abi,
+      functionName: "assertMaxEthSpend",
+      args: [me.address, parseEther("0.011")],
+    }),
+  ),
   postTx(
     tokenReceiveOnly,
-    encodeAbiParameters([{ type: "address" }, { type: "address" }, { type: "uint256" }], [me.address, usdw, parseEther("9.9")]),
+    encodeFunctionData({
+      abi: TokenReceiveOnlyAssertionC.abi,
+      functionName: "assertTokenReceiveOnly",
+      args: [me.address, usdw, parseEther("9.9")],
+    }),
   ),
-  postTx(noBalanceDrops, encodeAbiParameters([{ type: "address" }], [me.address])),
+  postTx(
+    noBalanceDrops,
+    encodeFunctionData({
+      abi: NoBalanceDropsAssertionC.abi,
+      functionName: "assertNoBalanceDrops",
+      args: [me.address],
+    }),
+  ),
 ];
 
 say("\n① Honest swap with all three assertions attached:");
