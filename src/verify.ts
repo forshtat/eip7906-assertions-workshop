@@ -1,8 +1,8 @@
 /**
  * Offline wiring check (no network, no funds): `yarn verify`. Run by CI on every push.
  *
- *   - every demo contract and the step 9 challenge files compile
- *   - every TXTRACE param name in the Yul prelude is usable and the opcodes assemble to 0xB6 / 0xB7
+ *   - every demo contract and the step 10 challenge files compile
+ *   - every TXPARAM / FRAMEPARAM / TXTRACE param name in the Yul prelude is usable and the opcodes assemble to 0xB0 / 0xB1 / 0xB3 / 0xB6 / 0xB7
  *   - the frame-tx codec behaves: type byte, signing is deterministic, and the signature
  *     is not part of the hash it signs
  *   - every package.json script points at a file that exists
@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { keccak256, recoverAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { yul, YUL_PRELUDE } from "./lib/compile.js";
-import { HonestDexC, EvilDexC, SpammerC, TokenC, VaultC } from "./lib/contracts.js";
+import { HonestDexC, EvilDexC, SpammerC, LendingPoolC, TokenC, VaultC } from "./lib/contracts.js";
 import { MY_ASSERTION } from "./challenge/my_assertion.js";
 import { OWNER_UNCHANGED } from "./solutions/owner_unchanged.js";
 import { encodeTx, selfVerify, senderCall, postTx, sigHash, signTx, type FrameTx } from "./lib/frameTx.js";
@@ -23,19 +23,35 @@ const check = (name: string, pass: boolean, detail = "") => {
 };
 
 // contracts: importing ./lib/contracts.js already compiled them; make sure each produced code
-for (const [name, c] of Object.entries({ TokenC, HonestDexC, EvilDexC, SpammerC, VaultC })) {
+for (const [name, c] of Object.entries({ TokenC, HonestDexC, EvilDexC, SpammerC, LendingPoolC, VaultC })) {
   check(`${name} compiles`, c.bytecode.length > 10);
 }
 
 // Yul: touch every prelude function so a typo in a param name is caught, and check the opcode bytes
 const paramNames = [...YUL_PRELUDE.matchAll(/function ([A-Z_]+)\(\) -> p/g)].map((m) => m[1]);
 const touchAll = paramNames.map((n) => `pop(${n}())`).join("\n");
-const all = yul("Params", `${touchAll}\npop(txtrace(0, 0))\neventdatacopy(0, 0, 0, 0)`);
-check(`all ${paramNames.length} TXTRACE param names compile`, all.bytecode.length > 10);
+const all = yul(
+  "Params",
+  `${touchAll}\npop(txparam(0))\npop(framedataload(0, 0))\npop(frameparam(0, 0))\npop(txtrace(0, 0))\neventdatacopy(0, 0, 0, 0)`,
+);
+check(`all ${paramNames.length} TXPARAM/FRAMEPARAM/TXTRACE param names compile`, all.bytecode.length > 10);
+check("TXPARAM assembles to 0xb0", all.bytecode.includes("b0"));
+check("FRAMEDATALOAD assembles to 0xb1", all.bytecode.includes("b1"));
+check("FRAMEPARAM assembles to 0xb3", all.bytecode.includes("b3"));
 check("TXTRACE assembles to 0xb6", all.bytecode.includes("b6"));
 check("EVENTDATACOPY assembles to 0xb7", all.bytecode.includes("b7"));
-check("step 9 challenge stub compiles", yul("Stub", MY_ASSERTION).bytecode.length > 10);
-check("step 9 solution compiles", yul("Solution", OWNER_UNCHANGED).bytecode.length > 10);
+check("step 10 challenge stub compiles", yul("Stub", MY_ASSERTION).bytecode.length > 10);
+check("step 10 solution compiles", yul("Solution", OWNER_UNCHANGED).bytecode.length > 10);
+for (const stepFile of [
+  "step_4_eth_assertion.ts",
+  "step_5_token_assertion.ts",
+  "step_6_state_assertion.ts",
+  "step_9_circuit_breaker.ts",
+]) {
+  const src = readFileSync(`src/steps/${stepFile}`, "utf8");
+  const m = src.match(/yul\("(\w+)",\s*`([\s\S]*?)`\)/);
+  check(`${stepFile} Yul assertion compiles`, Boolean(m && yul(m[1], m[2]).bytecode.length > 10));
+}
 
 // codec
 const key = `0x${"11".repeat(32)}` as Hex;

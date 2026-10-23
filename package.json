@@ -13,8 +13,9 @@
     "step_6_state_assertion": "tsx src/steps/step_6_state_assertion.ts",
     "step_7_compose": "tsx src/steps/step_7_compose.ts",
     "step_8_gas_griefing": "tsx src/steps/step_8_gas_griefing.ts",
-    "step_9_challenge": "tsx src/steps/step_9_challenge.ts",
-    "step_9_solution": "tsx src/steps/step_9_challenge.ts --solution",
+    "step_9_circuit_breaker": "tsx src/steps/step_9_circuit_breaker.ts",
+    "step_10_challenge": "tsx src/steps/step_10_challenge.ts",
+    "step_10_solution": "tsx src/steps/step_10_challenge.ts --solution",
     "typecheck": "tsc --noEmit",
     "verify": "tsc --noEmit && tsx src/verify.ts"
   },

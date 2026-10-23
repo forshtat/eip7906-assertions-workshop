@@ -27,7 +27,8 @@ Then run the steps in order. Each one ends by telling you the next command.
 | 6 | `yarn step_6_state_assertion` | Events can lie: asserting on storage diffs instead |
 | 7 | `yarn step_7_compose` | Several assertions from different authors in one tx |
 | 8 | `yarn step_8_gas_griefing` | Attacking the assertion: padding the log to burn its gas |
-| 9 | `yarn step_9_challenge` | **Your turn.** Edit `src/challenge/my_assertion.ts` (`step_9_solution` shows an answer) |
+| 9 | `yarn step_9_circuit_breaker` | DeFi protocol circuit breakers: contracts that require and enforce their own POST_TX invariants |
+| 10 | `yarn step_10_challenge` | **Your turn.** Edit `src/challenge/my_assertion.ts` (`step_10_solution` shows an answer) |
 
 ## The 60-second idea
 
@@ -62,11 +63,11 @@ frame-transaction codec). It never touches the devnet. CI runs it on every push.
 
 ```
 src/steps/       one file per step: the story, the assertion (Yul), the transactions
-src/challenge/   step 9 stub (yours to edit)        src/solutions/  step 9 answer
+src/challenge/   step 10 stub (yours to edit)       src/solutions/  step 10 answer
 src/lib/
   frameTx.ts     EIP-8141 encoding + signing; selfVerify() / senderCall() / postTx() builders
-  compile.ts     in-process solc: Solidity for dapps, Yul for assertions (+ TXTRACE param names)
-  contracts.ts   the demo world (token, dexes, vault), read once and forget
+  compile.ts     in-process solc: Solidity for dapps, Yul for assertions (+ TXPARAM / FRAMEPARAM / TXTRACE names)
+  contracts.ts   the demo world (token, dexes, lending pool, vault), read once and forget
   chain.ts rpc.ts scenario.ts output.ts state.ts config.ts   plumbing
 ```
 

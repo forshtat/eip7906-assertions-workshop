@@ -6,8 +6,9 @@
  *              non-compliant "silent" token that moves balances without Transfer events.
  *  - HonestDex swap(token) pays 1000 tokens per 1 wei of ETH.
  *  - EvilDex   same `swap(token)` calldata, but sweeps your approved tokens. Unless `fair`, it also short-changes you.
- *  - Spammer   emits lots of junk events (used to attack assertion gas in step 8).
- *  - Vault     owned by whoever is in slot 0 (used by the challenge).
+ *  - Spammer     emits lots of junk events (used to attack assertion gas in step 8).
+ *  - LendingPool DeFi pool with a circuit breaker and two lurking bugs (used in step 9).
+ *  - Vault       owned by whoever is in slot 0 (used by the challenge).
  */
 import { solidity } from "./compile.js";
 
@@ -70,6 +71,39 @@ contract Spammer {
   function spam(uint256 n) external { for (uint256 i = 0; i < n; i++) emit Junk(i); }
 }
 
+contract LendingPool {
+  uint256 public reserves;                        // slot 0: accounted token reserves
+  Token public immutable asset;
+  address public immutable circuitBreaker;
+
+  constructor(Token a, address cb) { asset = a; circuitBreaker = cb; }
+
+  modifier withAssertion() {
+    (bool ok, ) = circuitBreaker.staticcall(abi.encode(address(this), asset));
+    require(ok, "missing circuit breaker POST_TX frame");
+    _;
+  }
+
+  function sync() external { reserves = asset.balanceOf(address(this)); }
+
+  function deposit(uint256 amount) external withAssertion {
+    asset.transferFrom(msg.sender, address(this), amount);
+    reserves += amount;
+  }
+
+  // Bug #1 (reserve drain): meant to sweep only excess tokens above 'reserves',
+  // but forgets to subtract 'reserves' and transfers the raw 'amount' out.
+  function skim(address to, uint256 amount) external withAssertion {
+    asset.transfer(to, amount);
+  }
+
+  // Bug #2 (allowance backdoor): an unguarded helper that lets a caller trick the
+  // pool into approving its own asset to an attacker without changing balances now.
+  function approveRouter(Token t, address spender, uint256 amount) external withAssertion {
+    t.approve(spender, amount);
+  }
+}
+
 contract Vault {
   address public owner;                          // slot 0
   uint256 public secret;                         // slot 1
@@ -84,6 +118,7 @@ export const TokenC = compiled("Token");
 export const HonestDexC = compiled("HonestDex");
 export const EvilDexC = compiled("EvilDex");
 export const SpammerC = compiled("Spammer");
+export const LendingPoolC = compiled("LendingPool");
 export const VaultC = compiled("Vault");
 
 /** Where the attacker in our stories receives the loot. */

@@ -47,4 +47,4 @@ if (tight.status !== "0x1") bad("The assertion ran out of gas, so the whole tx (
 say("\n② Same transaction, POST_TX gas limit 300,000:");
 const roomy = await run([selfVerify(), ...body, postTx(tokenReceiveOnly, args, 300_000n)]);
 if (roomy.status === "0x1") ok(`Passes. Look at the POST_TX gas used above: that is what 300 extra events cost the assertion.`);
-next("step_9_challenge");
+next("step_9_circuit_breaker");

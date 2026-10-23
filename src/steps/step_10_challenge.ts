@@ -1,8 +1,8 @@
 /**
- * STEP 9 — Challenge: write your own assertion.
+ * STEP 10 — Challenge: write your own assertion.
  *
- *   yarn step_9_challenge     test the assertion you wrote in src/challenge/my_assertion.ts
- *   yarn step_9_solution      run the reference solution instead
+ *   yarn step_10_challenge    test the assertion you wrote in src/challenge/my_assertion.ts
+ *   yarn step_10_solution     run the reference solution instead
  *
  * We check your assertion twice with free dry-runs (nothing is sent until you get both right):
  *   ✔ setSecret(42)               must be allowed
@@ -20,7 +20,7 @@ import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { say, title, ok, bad } from "../lib/output.js";
 
 const useSolution = process.argv.includes("--solution");
-title(useSolution ? "Step 9: reference solution" : "Step 9: your assertion");
+title(useSolution ? "Step 10: reference solution" : "Step 10: your assertion");
 
 let compiled;
 try {

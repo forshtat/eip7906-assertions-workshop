@@ -1,4 +1,4 @@
-/** One possible answer to the step 9 challenge. */
+/** One possible answer to the step 10 challenge. */
 export const OWNER_UNCHANGED = `
   let vault := calldataload(0)
 

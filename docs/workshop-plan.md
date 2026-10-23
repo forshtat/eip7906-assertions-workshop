@@ -8,13 +8,14 @@
 | 0:35 | **First assertion (25 min)** | Step 4. Walk the Yul with the room. Key points: revert = body undone but tx included and paid; the gas pre-charge shows up in the balance diff. |
 | 1:00 | **Break (10 min)** | |
 | 1:10 | **Events and state (25 min)** | Steps 5 and 6. Step 6 is the aha moment: the event assertion passes while funds are stolen. Ask "what else could a contract do that events don't tell you?" |
-| 1:35 | **Composition and attacks (20 min)** | Steps 7 and 8. Tie back to the EIP's Security Considerations: assertions must actually be present, can be griefed through gas, and only cover what they check. |
-| 1:55 | **Challenge (20 min)** | Step 9, individually or in pairs. Fast finishers: protect `secret` with a max value, or forbid contract deployments. |
-| 2:15 | **Wrap-up** | What's missing: smart accounts enforcing assertions in VERIFY, standard assertion libraries, wallet UX. |
+| 1:35 | **Composition and attacks (15 min)** | Steps 7 and 8. Tie back to the EIP's Security Considerations: assertions must actually be present, can be griefed through gas, and only cover what they check. |
+| 1:50 | **DeFi circuit breakers (15 min)** | Step 9. Flip the perspective from user-attached assertions to protocol-enforced invariants: `withAssertion` (via `TXPARAM` / `FRAMEPARAM`) + solvency and allowance checks in `POST_TX`. |
+| 2:05 | **Challenge (20 min)** | Step 10, individually or in pairs. Fast finishers: protect `secret` with a max value, or forbid contract deployments. |
+| 2:25 | **Wrap-up** | What's missing: smart accounts enforcing assertions in VERIFY, standard assertion libraries, wallet UX. |
 
 ## Things to know before running it live
 
-- The devnet is run by the ethrex team and can be reset. Run all nine steps yourself the day before.
+- The devnet is run by the ethrex team and can be reset. Run all ten steps yourself the day before.
 - The devnet implements an earlier spec revision than the current EIP text (see README). Say this out loud.
 - If the room's Wi-Fi is bad, `step_*` scripts retry network errors and fail over across the three RPCs.
 - Steps 5 to 8 reuse assertions deployed by earlier steps (stored in `.workshop-state.json`), so skipping steps breaks later ones.
