@@ -22,9 +22,11 @@ import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { ATTACKER } from "../lib/contracts.js";
 import { requireState } from "../lib/state.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, next, ok } from "../lib/output.js";
 
 title("Step 7: composing assertions");
+startStep(7);
 const { usdw, honestDex, evilDexSilent } = world();
 const { ethSpendLimit, tokenReceiveOnly, noBalanceDrops } = requireState("ethSpendLimit", "tokenReceiveOnly", "noBalanceDrops");
 
@@ -66,4 +68,5 @@ names.forEach((name, i) => {
 });
 say("\n  The first failing assertion stops the run, and the whole body is rolled back, however many");
 say("  different things it was doing. Re-order the assertions in the list to see another one catch it first.");
+finishStep(7);
 next("step_8_gas_griefing");

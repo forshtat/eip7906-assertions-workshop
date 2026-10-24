@@ -11,22 +11,24 @@
  */
 import { encodeAbiParameters, encodeFunctionData } from "viem";
 import { deployOnce } from "../lib/chain.js";
-import { yul } from "../lib/compile.js";
+import { compileAssertion } from "../lib/compile.js";
 import { ATTACKER, VaultC } from "../lib/contracts.js";
 import { MY_ASSERTION } from "../challenge/my_assertion.js";
 import { OWNER_UNCHANGED } from "../solutions/owner_unchanged.js";
 import { dryRun, me, run } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, ok, bad } from "../lib/output.js";
 
 const useSolution = process.argv.includes("--solution");
 title(useSolution ? "Step 9: reference solution" : "Step 9: your assertion");
+startStep(9);
 
 let compiled;
 try {
-  compiled = yul("OwnerUnchanged", useSolution ? OWNER_UNCHANGED : MY_ASSERTION);
+  compiled = compileAssertion("OwnerUnchanged", useSolution ? OWNER_UNCHANGED : MY_ASSERTION);
 } catch (e) {
-  bad("Your Yul does not compile yet:");
+  bad("Your assertion does not compile yet:");
   say((e as Error).message);
   process.exit(1);
 }

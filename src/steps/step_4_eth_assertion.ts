@@ -24,38 +24,39 @@
  */
 import { encodeAbiParameters, parseEther } from "viem";
 import { deployOnce, eth } from "../lib/chain.js";
-import { yul } from "../lib/compile.js";
+import { compileAssertion } from "../lib/compile.js";
 import { ATTACKER } from "../lib/contracts.js";
 import { holdings, me, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, next, ok } from "../lib/output.js";
 
 // ─────────────────────────────  THE ASSERTION  ─────────────────────────────
 // calldata: owner (address), maxSpend (uint256)
-const ETH_SPEND_LIMIT = yul("EthSpendLimit", `
-  let owner := calldataload(0)
-  let maxSpend := calldataload(32)
+const ETH_SPEND_LIMIT = compileAssertion("EthSpendLimit", `
+    (address owner, uint256 maxSpend) = abi.decode(msg.data, (address, uint256));
 
-  // Find the owner's entry in the balance diff.
-  let spent := 0
-  let n := txtrace(BALANCES_CHANGED(), 0)
-  for { let i := 0 } lt(i, n) { i := add(i, 1) } {
-    if eq(txtrace(BALANCE_ADDRESS(), i), owner) {
-      spent := sub(txtrace(BALANCE_BEFORE(), i), txtrace(BALANCE_AFTER(), i))
+    // Find the owner's entry in the balance diff.
+    uint256 spent;
+    uint256 n = txtrace(0, TxTrace.BALANCES_CHANGED);
+    for (uint256 i; i < n; ++i) {
+      if (address(uint160(txtrace(i, TxTrace.BALANCE_ADDRESS))) == owner) {
+        spent = txtrace(i, TxTrace.BALANCE_BEFORE) - txtrace(i, TxTrace.BALANCE_AFTER);
+      }
     }
-  }
 
-  // The gas pre-charge is not "spending"; take it out when the owner is the gas payer.
-  if eq(owner, txtrace(GAS_PAYER(), 0)) {
-    spent := sub(spent, txtrace(GAS_PRECHARGE(), 0))
-  }
+    // The gas pre-charge is not "spending"; take it out when the owner is the gas payer.
+    if (owner == address(uint160(txtrace(0, TxTrace.GAS_PAYER)))) {
+      spent -= txtrace(0, TxTrace.GAS_PRECHARGE);
+    }
 
-  // Revert = assertion failed = the transaction body is undone.
-  if gt(spent, maxSpend) { revert(0, 0) }
+    // Revert = assertion failed = the transaction body is undone.
+    require(spent <= maxSpend);
 `);
 // ───────────────────────────────────────────────────────────────────────────
 
 title("Step 4: an ETH spend limit");
+startStep(4);
 const { usdw, honestDex } = world();
 const assertion = await deployOnce(me.key, "ethSpendLimit", ETH_SPEND_LIMIT.bytecode);
 say(`Assertion contract: ${assertion}`);
@@ -82,4 +83,5 @@ after = await holdings();
 showChange(before, after);
 say(`\n  Frames 1 and 2 report success, frame 3 (the assertion) failed, and the whole body was undone:`);
 say(`  no swap, no 0.5 ETH transfer. The only ETH you lost is gas: ${eth(before.eth - after.eth)}.`);
+finishStep(4);
 next("step_5_token_assertion");

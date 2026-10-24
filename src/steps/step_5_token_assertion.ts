@@ -21,48 +21,43 @@
  */
 import { encodeAbiParameters, parseEther } from "viem";
 import { deployOnce } from "../lib/chain.js";
-import { yul } from "../lib/compile.js";
+import { compileAssertion } from "../lib/compile.js";
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify } from "../lib/frameTx.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, next, ok } from "../lib/output.js";
 
 // ─────────────────────────────  THE ASSERTION  ─────────────────────────────
 // calldata: owner (address), token (address), minReceived (uint256)
-const TOKEN_RECEIVE_ONLY = yul("TokenReceiveOnly", `
-  let owner := calldataload(0)
-  let token := calldataload(32)
-  let minReceived := calldataload(64)
+const TOKEN_RECEIVE_ONLY = compileAssertion("TokenReceiveOnly", `
+    (address owner, address token, uint256 minReceived) = abi.decode(msg.data, (address, address, uint256));
 
-  let SYSTEM := 0xfffffffffffffffffffffffffffffffffffffffe
-  let TRANSFER := 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+    address system = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE; // the protocol's pseudo-sender (checksummed, as Solidity requires)
+    uint256 transferTopic = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef;
 
-  let received := 0
-  let n := txtrace(EVENTS_COUNT(), 0)
-  for { let i := 0 } lt(i, n) { i := add(i, 1) } {
-    // Transfer(from, to, value) has exactly 3 topics: the signature and the two indexed addresses.
-    if eq(txtrace(EVENT_TOPIC_COUNT(), i), 3) {
-      if eq(txtrace(EVENT_TOPIC0(), i), TRANSFER) {
-        let emitter := txtrace(EVENT_ADDRESS(), i)
-        if iszero(eq(emitter, SYSTEM)) {
-          // Nothing of yours may leave, in any token.
-          if eq(txtrace(EVENT_TOPIC1(), i), owner) { revert(0, 0) }
+    uint256 received;
+    uint256 n = txtrace(0, TxTrace.EVENTS_COUNT);
+    for (uint256 i; i < n; ++i) {
+      // Transfer(from, to, value) has exactly 3 topics: the signature and the two indexed addresses.
+      if (txtrace(i, TxTrace.EVENT_TOPIC_COUNT) != 3) continue;
+      if (txtrace(i, TxTrace.EVENT_TOPIC0) != transferTopic) continue;
+      address emitter = address(uint160(txtrace(i, TxTrace.EVENT_ADDRESS)));
+      if (emitter == system) continue;
 
-          // Count what arrives in the token you expected.
-          if eq(txtrace(EVENT_TOPIC2(), i), owner) {
-            if eq(emitter, token) {
-              eventdatacopy(i, 0, 0, 32)
-              received := add(received, mload(0))
-            }
-          }
-        }
+      // Nothing of yours may leave, in any token.
+      require(address(uint160(txtrace(i, TxTrace.EVENT_TOPIC1))) != owner);
+
+      // Count what arrives in the token you expected.
+      if (address(uint160(txtrace(i, TxTrace.EVENT_TOPIC2))) == owner && emitter == token) {
+        received += abi.decode(eventdatacopy(i, 0, 32), (uint256));
       }
     }
-  }
-  if lt(received, minReceived) { revert(0, 0) }
+    require(received >= minReceived);
 `);
 // ───────────────────────────────────────────────────────────────────────────
 
 title("Step 5: a token assertion built on events");
+startStep(5);
 const { usdw, honestDex, evilDex } = world();
 await resetHoldings();
 const assertion = await deployOnce(me.key, "tokenReceiveOnly", TOKEN_RECEIVE_ONLY.bytecode);
@@ -90,4 +85,5 @@ after = await holdings();
 showChange(before, after);
 say("\n  The evil dex tried to short-change you and sweep your approved USDW. Both show up as Transfer");
 say("  events, the assertion saw them, and the whole body was undone. You only paid gas.");
+finishStep(5);
 next("step_6_state_assertion");

@@ -16,8 +16,10 @@ import { CHAIN_ID, loadAccount, rpcUrl } from "../lib/config.js";
 import { ok, bad, say, title, next, showFrames } from "../lib/output.js";
 import { rpc, sleep } from "../lib/rpc.js";
 import { selfVerify, senderCall } from "../lib/frameTx.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 1: check your setup");
+startStep(1);
 
 const chainId = Number(await rpc("eth_chainId"));
 if (chainId !== CHAIN_ID) throw new Error(`Wrong chain: got ${chainId}, expected ${CHAIN_ID}`);
@@ -47,4 +49,5 @@ if (!sim.valid) throw new Error(`The node rejected our frame transaction: ${sim.
 ok(`The node accepts a frame transaction (prefix shape: ${sim.prefixShape}, gas payer: ${sim.payer.slice(0, 10)}…)`);
 showFrames(tx, sim.frames);
 
+finishStep(1);
 next("step_2_setup");

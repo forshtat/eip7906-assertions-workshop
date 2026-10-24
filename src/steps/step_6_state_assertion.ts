@@ -25,33 +25,33 @@
  */
 import { encodeAbiParameters, parseEther } from "viem";
 import { deployOnce } from "../lib/chain.js";
-import { yul } from "../lib/compile.js";
+import { compileAssertion } from "../lib/compile.js";
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify } from "../lib/frameTx.js";
 import { requireState } from "../lib/state.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
 
 // ─────────────────────────────  THE ASSERTION  ─────────────────────────────
 // calldata: owner (address)
-const NO_BALANCE_DROPS = yul("NoBalanceDrops", `
-  let owner := calldataload(0)
+const NO_BALANCE_DROPS = compileAssertion("NoBalanceDrops", `
+    address owner = abi.decode(msg.data, (address));
 
-  // slot of balanceOf[owner] for any ERC-20 that keeps balances at slot 0
-  mstore(0, owner)
-  mstore(32, 0)
-  let balanceSlot := keccak256(0, 64)
+    // slot of balanceOf[owner] for any ERC-20 that keeps balances at slot 0
+    uint256 balanceSlot = uint256(keccak256(abi.encode(owner, uint256(0))));
 
-  let n := txtrace(SLOTS_CHANGED(), 0)
-  for { let i := 0 } lt(i, n) { i := add(i, 1) } {
-    if eq(txtrace(SLOT_KEY(), i), balanceSlot) {
-      // some contract's balanceOf[owner] changed: it may only go up
-      if lt(txtrace(SLOT_AFTER(), i), txtrace(SLOT_BEFORE(), i)) { revert(0, 0) }
+    uint256 n = txtrace(0, TxTrace.SLOTS_CHANGED);
+    for (uint256 i; i < n; ++i) {
+      if (txtrace(i, TxTrace.SLOT_KEY) == balanceSlot) {
+        // some contract's balanceOf[owner] changed: it may only go up
+        require(txtrace(i, TxTrace.SLOT_AFTER) >= txtrace(i, TxTrace.SLOT_BEFORE));
+      }
     }
-  }
 `);
 // ───────────────────────────────────────────────────────────────────────────
 
 title("Step 6: events can lie, state diffs can't");
+startStep(6);
 const { usdw, honestDex, evilDexSilent } = world();
 const { tokenReceiveOnly } = requireState("tokenReceiveOnly"); // deployed by step 5
 const eventArgs = encodeAbiParameters(
@@ -83,4 +83,5 @@ const r3 = await run([selfVerify(), swapFrame(honestDex, usdw), postTx(stateAsse
 after = await holdings();
 showChange(before, after);
 if (r3.status === "0x1") ok("Balances only went up, assertion passed.");
+finishStep(6);
 next("step_7_compose");

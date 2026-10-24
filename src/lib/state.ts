@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 
 const FILE = ".workshop-state.json";
 
@@ -7,6 +7,9 @@ export type State = Record<string, string>;
 
 export const readState = (): State => (existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : {});
 export const writeState = (patch: State) => writeFileSync(FILE, JSON.stringify({ ...readState(), ...patch }, null, 2));
+
+/** Forget everything: step 1 starts the workshop over. */
+export const resetState = () => rmSync(FILE, { force: true });
 
 export function requireState(...keys: string[]): Record<string, `0x${string}`> {
   const s = readState();

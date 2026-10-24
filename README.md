@@ -29,6 +29,10 @@ Then run the steps in order. Each one ends by telling you the next command.
 | 8 | `yarn step_8_gas_griefing` | Attacking the assertion: padding the log to burn its gas |
 | 9 | `yarn step_9_challenge` | **Your turn.** Edit `src/challenge/my_assertion.ts` (`step_9_solution` shows an answer) |
 
+Run the steps in order. Step 1 **resets** the workshop (it deletes `.workshop-state.json`), and every later step refuses
+to run until the steps it needs have finished, or if the key in `.env` is not the one step 1 recorded: the contracts,
+approvals and balances belong to that key. The message says what to run.
+
 ## The 60-second idea
 
 A *frame transaction* is a list of frames. EIP-7906 adds one more kind, **POST_TX**:
@@ -51,7 +55,7 @@ current text. The workshop follows **what the devnet does**:
 | Opcodes | `TXTRACE` 0xB6, `EVENTDATACOPY` 0xB7 | byte values aren't assigned by the EIP; ethrex picks these |
 | `TXDIFF` (0xB8) | exists, **deliberately unused here** | removed from the spec |
 
-If the devnet is upgraded, the param numbers in `src/lib/compile.ts` (`YUL_PRELUDE`) are the only place to update.
+If the devnet is upgraded, the opcodes and param ids live in [hegota-frames](https://github.com/forshtat/hegota-frames-yul-library) (`yul/eip7906-workshop/` and `contracts/Params.sol`): update them there.
 
 ## Checking your checkout
 
@@ -61,18 +65,23 @@ frame-transaction codec). It never touches the devnet. CI runs it on every push.
 ## How the code is organised
 
 ```
-src/steps/       one file per step: the story, the assertion (Yul), the transactions
+src/steps/       one file per step: the story, the assertion (Solidity), the transactions
 src/challenge/   step 9 stub (yours to edit)        src/solutions/  step 9 answer
 src/lib/
   frameTx.ts     EIP-8141 encoding + signing; selfVerify() / senderCall() / postTx() builders
-  compile.ts     in-process solc: Solidity for dapps, Yul for assertions (+ TXTRACE param names)
+  compile.ts     in-process solc: Solidity for dapps and for assertions (which inherit HegotaSupport)
   contracts.ts   the demo world (token, dexes, vault), read once and forget
   chain.ts rpc.ts scenario.ts output.ts state.ts config.ts   plumbing
 ```
 
-Assertions are written in **Yul** because Solidity can't emit the new opcodes. `txtrace(param, index)` and
-`eventdatacopy(...)` are provided as Yul functions. Edit an assertion and re-run its step: it is redeployed
-automatically because its bytecode changed.
+Assertions are written in **Solidity**. Solidity can't emit the new opcodes, so each assertion inherits `HegotaSupport`
+from [hegota-frames](https://github.com/forshtat/hegota-frames-yul-library), which provides them as functions:
+`txtrace(index, TxTrace.BALANCE_AFTER)` and `eventdatacopy(eventIndex, dataOffset, length)`. You write the body of the
+assertion's `fallback()`; `msg.data` is what the POST_TX frame passes in. Edit an assertion and re-run its step: it is
+redeployed automatically because its bytecode changed.
+
+Two costs to know about: every assertion creates a few small helper contracts when it is deployed (about 2M gas), and
+each `txtrace` is a call to one of them (a loop over 300 events costs the assertion about 350k gas, step 8).
 
 ## Troubleshooting
 

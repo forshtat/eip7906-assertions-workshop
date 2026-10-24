@@ -11,7 +11,7 @@
  *
  * Two lessons:
  *   1. Budget the POST_TX frame from the *body's* gas limit. Every event costs the body ~1000 gas to
- *      emit, so a body with a given gas limit can only make so many; the assertion spends ~265 gas on each (measured below).
+ *      emit, so a body with a given gas limit can only make so many; the assertion spends ~1,150 gas on each (measured below).
  *   2. Prefer assertions whose cost doesn't grow with attacker-controlled data (e.g. look up one
  *      slot, don't enumerate everything).
  *
@@ -23,9 +23,11 @@ import { SpammerC } from "../lib/contracts.js";
 import { me, resetHoldings, run, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { requireState } from "../lib/state.js";
+import { finishStep, startStep } from "../lib/progress.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
 
 title("Step 8: gas griefing");
+startStep(8);
 const { usdw, honestDex } = world();
 const { tokenReceiveOnly } = requireState("tokenReceiveOnly");
 const spammer = await deployOnce(me.key, "spammer", SpammerC.bytecode);
@@ -44,7 +46,8 @@ say("\n① 300 junk events, POST_TX gas limit 30,000 (looks generous for a 1-eve
 const tight = await run([selfVerify(), ...body, postTx(tokenReceiveOnly, args, 30_000n)]);
 if (tight.status !== "0x1") bad("The assertion ran out of gas, so the whole tx (a perfectly honest swap) was rolled back.");
 
-say("\n② Same transaction, POST_TX gas limit 300,000:");
-const roomy = await run([selfVerify(), ...body, postTx(tokenReceiveOnly, args, 300_000n)]);
+say("\n② Same transaction, POST_TX gas limit 500,000:");
+const roomy = await run([selfVerify(), ...body, postTx(tokenReceiveOnly, args, 500_000n)]);
 if (roomy.status === "0x1") ok(`Passes. Look at the POST_TX gas used above: that is what 300 extra events cost the assertion.`);
+finishStep(8);
 next("step_9_challenge");
