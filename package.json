@@ -24,7 +24,7 @@
   "dependencies": {
     "solc": "0.8.28",
     "viem": "^2.57.10",
-    "hegota-frames": "github:forshtat/hegota-frames-yul-library#5c564841fa32c6703f378f99b152cacd8c577fd7"
+    "hegota-frames": "github:forshtat/hegota-frames-yul-library#1047d60e8828ddc29e06a19aab58ef4b788af219"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
