@@ -16,8 +16,10 @@
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { selfVerify } from "../lib/frameTx.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 3: blind signing");
+startStep(3);
 const { usdw, honestDex, evilDex } = world();
 await resetHoldings();
 
@@ -36,4 +38,5 @@ showChange(before, after);
 bad(`You paid 0.01 ETH, received 1 wei of USDW, and lost ${(before.usdw / 10n ** 18n).toString()} USDW to a stale approval.`);
 
 say("\nThe tx was valid, signed and included. Nothing 'went wrong' as far as the protocol is concerned.");
+finishStep(3);
 next("step_4_eth_assertion");

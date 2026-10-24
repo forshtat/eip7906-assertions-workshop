@@ -53,20 +53,26 @@ current text. The workshop follows **what the devnet does**:
 | Opcodes | `TXTRACE` 0xB6, `EVENTDATACOPY` 0xB7 | byte values aren't assigned by the EIP; ethrex picks these |
 | `TXDIFF` (0xB8) | exists, **deliberately unused here** | removed from the spec |
 
-All custom opcodes (`TXTRACE`, `EVENTDATACOPY`, `TXPARAM`, `FRAMEDATALOAD`, `FRAMEPARAM`) are encapsulated in
-`contracts/shared/HegotaLibrary.sol`, so every contract and assertion is written in standard Solidity.
+All custom opcodes (`TXTRACE`, `EVENTDATACOPY`, `TXPARAM`, `FRAMEDATALOAD`, `FRAMEPARAM`, ...) come from
+[hegota-frames](https://github.com/forshtat/hegota-frames-yul-library) through `contracts/shared/Hegota.sol`, so every
+contract and assertion is written in standard Solidity: `contract MyAssertion is Hegota`, then
+`txtrace(i, TxTrace.BALANCE_AFTER)`.
+
+Run the steps in order. Step 1 **resets** the workshop (it deletes `.workshop-state.json`), and every later step refuses
+to run until step 2 has deployed the playground, or if the key in `.env` is not the one step 1 recorded: the contracts,
+approvals and balances belong to that key.
 
 ## Checking your checkout
 
 `yarn verify` typechecks and runs an offline wiring check (compiles every Solidity contract and assertion in
-`contracts/`, verifies the `HegotaLibrary` oracle bytecodes, and tests the frame-transaction codec). It never
+`contracts/`, checks the hegota-frames helpers are embedded, and tests the step order and frame-transaction signing). It never
 touches the devnet. CI runs it on every push.
 
 ## How the code is organised
 
 ```
 contracts/
-  shared/HegotaLibrary.sol                        Solidity wrapper library for EIP-7906 & EIP-8141 opcodes
+  shared/Hegota.sol                            the Hegotá opcodes as functions (hegota-frames' HegotaSupport) + parameter enums
   Playground.sol                               Token, HonestDex, EvilDex, Spammer, Vault
   LendingPool.sol                              Step 9 DeFi pool with self-enforced circuit breaker
   assertions/EthSpendLimitAssertion.sol        Step 4 assertion

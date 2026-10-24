@@ -20,8 +20,10 @@ import { ATTACKER, EvilDexC, HonestDexC, TokenC } from "../lib/contracts.js";
 import { loadAccount } from "../lib/config.js";
 import { say, ok, title, next } from "../lib/output.js";
 import { readState, writeState } from "../lib/state.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 2: deploy the playground");
+startStep(2);
 const me = loadAccount();
 const key = me.key;
 const str = (s: string, emit: boolean) =>
@@ -64,4 +66,5 @@ say(
   `\nYou hold: ${eth(await balanceOf(me.address))} (gas money), ${tokens(await tokenBalance(usdw, me.address))} USDW, ${tokens(await tokenBalance(silent, me.address))} SILENT`,
 );
 ok("Playground ready");
+finishStep(2);
 next("step_3_blind_signing");

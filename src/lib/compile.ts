@@ -1,6 +1,7 @@
 /**
  * In-process Solidity compiler (`solc-js`) that compiles `.sol` files directly from `contracts/`
- * on disk (resolving relative imports such as `../shared/HegotaLibrary.sol`).
+ * on disk. Relative imports resolve inside `contracts/`; `hegota-frames/...` imports resolve to the installed
+ * hegota-frames package (HegotaSupport and its parameter enums).
  */
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -10,6 +11,8 @@ import type { Hex } from "viem";
 
 const solc = createRequire(import.meta.url)("solc");
 const CONTRACTS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../contracts");
+const HEGOTA_FRAMES = "hegota-frames/";
+const HEGOTA_FRAMES_DIR = path.dirname(createRequire(import.meta.url).resolve("hegota-frames/package.json"));
 
 export interface CompiledContract {
   abi: any[];
@@ -37,6 +40,9 @@ function compileFile(relPath: string): Record<string, any> {
 
   const findImports = (importPath: string) => {
     try {
+      if (importPath.startsWith(HEGOTA_FRAMES)) {
+        return { contents: readFileSync(path.join(HEGOTA_FRAMES_DIR, importPath.slice(HEGOTA_FRAMES.length)), "utf8") };
+      }
       const resolved = path.resolve(CONTRACTS_DIR, importPath);
       if (!resolved.startsWith(CONTRACTS_DIR)) return { error: `Import outside contracts/: ${importPath}` };
       return { contents: readFileSync(resolved, "utf8") };

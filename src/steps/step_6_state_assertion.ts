@@ -11,10 +11,10 @@
  *   ② a storage-diff assertion        → blocks it
  *   ③ the storage-diff assertion on an honest swap → passes (no false alarm)
  *
- * See `contracts/assertions/NoBalanceDropsAssertion.sol`. It uses `HegotaLibrary`'s storage slot views:
- *    STORAGE_COUNT        how many (contract, slot) pairs changed
- *    STORAGE_SLOT[i]      the slot's key
- *    STORAGE_BEFORE/AFTER[i] its value before the tx / right now
+ * See `contracts/assertions/NoBalanceDropsAssertion.sol`. It uses the storage slot views of `txtrace`:
+ *    TxTrace.SLOTS_CHANGED       how many (contract, slot) pairs changed
+ *    TxTrace.SLOT_KEY[i]         the slot's key
+ *    TxTrace.SLOT_BEFORE/AFTER[i] its value before the tx / right now
  *
  * An ERC-20 keeps balances in `mapping(address => uint256) balanceOf` at slot 0 (this is true for
  * OpenZeppelin tokens too), so your balance lives at `keccak256(abi.encode(you, 0))` *in every token*.
@@ -29,8 +29,10 @@ import { NoBalanceDropsAssertionC, TokenReceiveOnlyAssertionC } from "../lib/con
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify } from "../lib/frameTx.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 6: events can lie, state diffs can't (contracts/assertions/NoBalanceDropsAssertion.sol)");
+startStep(6);
 const { usdw, honestDex, evilDexSilent } = world();
 const tokenReceiveOnly = await deployOnce(me.key, "tokenReceiveOnly", TokenReceiveOnlyAssertionC.bytecode);
 const stateAssertion = await deployOnce(me.key, "noBalanceDrops", NoBalanceDropsAssertionC.bytecode);
@@ -68,4 +70,5 @@ const r3 = await run([selfVerify(), swapFrame(honestDex, usdw), postTx(stateAsse
 after = await holdings();
 showChange(before, after);
 if (r3.status === "0x1") ok("Balances only went up, assertion passed.");
+finishStep(6);
 next("step_7_compose");

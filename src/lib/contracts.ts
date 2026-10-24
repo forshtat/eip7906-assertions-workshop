@@ -4,7 +4,7 @@
  *  - Playground (`contracts/Playground.sol`):
  *      Token, HonestDex, EvilDex, Spammer, Vault
  *  - DeFi Circuit Breaker (`contracts/LendingPool.sol`):
- *      LendingPool (uses `HegotaLibrary` for both EIP-8141 frame checks and EIP-7906 post-tx assertions)
+ *      LendingPool (is `Hegota`: EIP-8141 frame checks and EIP-7906 post-tx assertions)
  *  - Assertions (`contracts/assertions/*.sol`):
  *      EthSpendLimitAssertion, TokenReceiveOnlyAssertion, NoBalanceDropsAssertion
  */

@@ -3,7 +3,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { FAUCET_URL, RPC_URLS, hegota, rpcUrl } from "./config.js";
 import { readState, writeState } from "./state.js";
 import { broadcast, rpc, sleep } from "./rpc.js";
-import { encodeTx, signTx, txHash, type Frame, type FrameTx } from "./frameTx.js";
+import { encodeTx, newTx, signTx, txHash, type Frame, type FrameTx } from "./frameTx.js";
 
 export const balanceOf = async (a: Address): Promise<bigint> => BigInt(await rpc("eth_getBalance", [a, "latest"]));
 export const nonceOf = async (a: Address): Promise<bigint> => BigInt(await rpc("eth_getTransactionCount", [a, "latest"]));
@@ -31,15 +31,14 @@ export async function prepareTx(account: { address: Address; key: Hex }, frames:
   const block = await rpc("eth_getBlockByNumber", ["latest", false]);
   const baseFee = BigInt(block.baseFeePerGas ?? "0x3b9aca00");
   const tip = 1_000_000_000n;
-  const tx: FrameTx = {
+  const tx: FrameTx = newTx({
     chainId: BigInt(await rpc("eth_chainId")),
     nonce: await nonceOf(account.address),
     sender: account.address,
     frames,
-    signature: "0x",
     maxPriorityFeePerGas: tip,
     maxFeePerGas: baseFee * 2n + tip,
-  };
+  });
   return signTx(tx, account.key);
 }
 
@@ -83,8 +82,12 @@ export function clients(key: Hex) {
 
 /** Deploy creation bytecode and return the new contract's address. */
 export async function deploy(key: Hex, bytecode: Hex, args: Hex = "0x"): Promise<Address> {
-  const { wallet, pub } = clients(key);
-  const hash = await wallet.sendTransaction({ data: `${bytecode}${args.slice(2)}` as Hex, gas: 3_000_000n });
+  const { account, wallet, pub } = clients(key);
+  const data = `${bytecode}${args.slice(2)}` as Hex;
+  // Creating a contract costs state gas, which grows with its size and with every contract it creates (an assertion
+  // creates one helper per opcode), so ask the node rather than guess a limit.
+  const gas = ((await pub.estimateGas({ account: account.address, data })) * 12n) / 10n;
+  const hash = await wallet.sendTransaction({ data, gas });
   const receipt = await pub.waitForTransactionReceipt({ hash, timeout: 120_000 });
   if (receipt.status !== "success" || !receipt.contractAddress) throw new Error(`Deployment failed: ${hash}`);
   return receipt.contractAddress;

@@ -10,13 +10,13 @@
  * "Rolled back" is the important part. The tx stays valid and included (status 0), the VERIFY frame's
  * effects (nonce, gas payment) are kept, so the block builder still gets paid. Only the damage is undone.
  *
- * See `contracts/assertions/EthSpendLimitAssertion.sol` (and `contracts/shared/HegotaLibrary.sol`).
+ * See `contracts/assertions/EthSpendLimitAssertion.sol` (and `contracts/shared/Hegota.sol`).
  * `TXTRACE(param, index)` is a "state diff viewer". The params used in `EthSpendLimitAssertion.sol`:
- *    BALANCE_COUNT        how many addresses changed balance
- *    BALANCE_ADDRESS[i]   which address entry i is
- *    BALANCE_BEFORE[i]    its balance at the start of the tx
- *    BALANCE_AFTER[i]     its balance right now (after the body)
- *    GAS_PAYER / GAS_PRECHARGE   who pre-paid gas, and how much
+ *    TxTrace.BALANCES_CHANGED    how many addresses changed balance
+ *    TxTrace.BALANCE_ADDRESS[i]  which address entry i is
+ *    TxTrace.BALANCE_BEFORE[i]   its balance at the start of the tx
+ *    TxTrace.BALANCE_AFTER[i]    its balance right now (after the body)
+ *    TxTrace.GAS_PAYER / GAS_PRECHARGE   who pre-paid gas, and how much
  *
  * One subtlety: the gas payer is charged the *maximum* possible gas up front. That shows up as a
  * balance change, so the assertion subtracts it, otherwise every tx looks like it spends too much.
@@ -29,8 +29,10 @@ import { ATTACKER, EthSpendLimitAssertionC } from "../lib/contracts.js";
 import { holdings, me, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { say, title, next, ok } from "../lib/output.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 4: an ETH spend limit (contracts/assertions/EthSpendLimitAssertion.sol)");
+startStep(4);
 const { usdw, honestDex } = world();
 const assertion = await deployOnce(me.key, "ethSpendLimit", EthSpendLimitAssertionC.bytecode);
 say(`Assertion contract: ${assertion}`);
@@ -61,4 +63,5 @@ after = await holdings();
 showChange(before, after);
 say(`\n  Frames 1 and 2 report success, frame 3 (the assertion) failed, and the whole body was undone:`);
 say(`  no swap, no 0.5 ETH transfer. The only ETH you lost is gas: ${eth(before.eth - after.eth)}.`);
+finishStep(4);
 next("step_5_token_assertion");

@@ -5,7 +5,7 @@
 | 0:00 | **Intro talk (15 min)** | Blind signing; what the user can't see in a signed tx; the idea of a *post-condition* the chain enforces. Introduce frames (VERIFY / SENDER) and the new POST_TX frame. No code yet. |
 | 0:15 | **Setup (10 min)** | Steps 1 and 2. Faucet rate limits are per IP: on shared Wi-Fi have a backup funded key ready. Step 2 sends ~12 txs, so start it early and talk over it. |
 | 0:25 | **The attack (10 min)** | Step 3. Pause on the output: *same calldata, same frames*. Ask the room what a wallet could have shown. |
-| 0:35 | **First assertion (25 min)** | Step 4. Walk the Yul with the room. Key points: revert = body undone but tx included and paid; the gas pre-charge shows up in the balance diff. |
+| 0:35 | **First assertion (25 min)** | Step 4. Walk the Solidity with the room. Key points: revert = body undone but tx included and paid; the gas pre-charge shows up in the balance diff. |
 | 1:00 | **Break (10 min)** | |
 | 1:10 | **Events and state (25 min)** | Steps 5 and 6. Step 6 is the aha moment: the event assertion passes while funds are stolen. Ask "what else could a contract do that events don't tell you?" |
 | 1:35 | **Composition and attacks (15 min)** | Steps 7 and 8. Tie back to the EIP's Security Considerations: assertions must actually be present, can be griefed through gas, and only cover what they check. |

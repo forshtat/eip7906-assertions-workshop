@@ -2,26 +2,20 @@
 pragma solidity ^0.8.28;
 
 import "./Playground.sol";
-import "./shared/HegotaLibrary.sol";
+import {Hegota, TxParam, FrameParam, FrameMode, TxTrace} from "./shared/Hegota.sol";
 
 /// @title LendingPool
 /// @notice DeFi pool with an on-chain Circuit Breaker enforced via EIP-8141 and EIP-7906 (Step 9).
 ///         Every state-changing entry point carries `withAssertion`, which inspects the outer
-///         Frame Transaction (via `HegotaLibrary` frame opcodes) to require a `POST_TX` frame calling
+///         Frame Transaction (via the `Hegota` frame opcodes) to require a `POST_TX` frame calling
 ///         `this.postTransactionAssertion()`. After the body runs, `postTransactionAssertion()`
 ///         checks pool solvency and scans `TXTRACE` events for unauthorized token approvals.
-contract LendingPool {
+contract LendingPool is Hegota {
     uint256 public reserves; // slot 0: accounted token reserves
     Token public immutable asset;
 
-    address public immutable txOracle;
-    address public immutable edOracle;
-    address public immutable frameOracle;
-
     constructor(Token a) {
         asset = a;
-        (txOracle, edOracle) = HegotaLibrary.deployOracles();
-        frameOracle = HegotaLibrary.deployFrameOracle();
     }
 
     modifier withAssertion() {
@@ -53,18 +47,18 @@ contract LendingPool {
     /// @notice Checks via EIP-8141 frame introspection that the enclosing Frame Transaction
     ///         includes a `POST_TX` frame targeting `this.postTransactionAssertion()`.
     function containsValidAssertion() public view returns (bool) {
-        uint256 framesCount = HegotaLibrary.txParam(frameOracle, HegotaLibrary.TX_FRAME_COUNT);
+        uint256 framesCount = txparam(TxParam.FRAME_COUNT);
         for (uint256 i = 0; i < framesCount; i++) {
-            uint256 mode = HegotaLibrary.frameParam(frameOracle, HegotaLibrary.FRAME_MODE, i);
-            if (mode != HegotaLibrary.MODE_POST_TX) continue;
+            uint256 mode = frameparam(i, FrameParam.MODE);
+            if (mode != uint256(FrameMode.POST_TX)) continue;
 
-            address target = address(uint160(HegotaLibrary.frameParam(frameOracle, HegotaLibrary.FRAME_TARGET, i)));
+            address target = address(uint160(frameparam(i, FrameParam.RESOLVED_TARGET)));
             if (target != address(this)) continue;
 
-            uint256 dataLen = HegotaLibrary.frameParam(frameOracle, HegotaLibrary.FRAME_DATA_LEN, i);
+            uint256 dataLen = frameparam(i, FrameParam.DATA_LENGTH);
             if (dataLen < 4) continue;
 
-            bytes4 selector = bytes4(HegotaLibrary.frameDataLoad(frameOracle, i, 0));
+            bytes4 selector = bytes4(framedataload(0, i));
             if (selector == this.postTransactionAssertion.selector) {
                 return true;
             }
@@ -79,14 +73,14 @@ contract LendingPool {
         require(asset.balanceOf(address(this)) >= reserves, "CircuitBreaker: pool insolvent");
 
         // 2. Allowance invariant: the pool must never grant a non-zero token approval.
-        uint256 eventCount = HegotaLibrary.query(txOracle, HegotaLibrary.EVENT_COUNT, 0);
+        uint256 eventCount = txtrace(0, TxTrace.EVENTS_COUNT);
         for (uint256 i = 0; i < eventCount; i++) {
-            if (HegotaLibrary.query(txOracle, HegotaLibrary.EVENT_TOPIC_CNT, i) != 3) continue;
-            if (bytes32(HegotaLibrary.query(txOracle, HegotaLibrary.EVENT_TOPIC0, i)) != Token.Approval.selector) continue;
+            if (txtrace(i, TxTrace.EVENT_TOPIC_COUNT) != 3) continue;
+            if (bytes32(txtrace(i, TxTrace.EVENT_TOPIC0)) != Token.Approval.selector) continue;
 
-            address tokenOwner = address(uint160(HegotaLibrary.query(txOracle, HegotaLibrary.EVENT_TOPIC1, i)));
+            address tokenOwner = address(uint160(txtrace(i, TxTrace.EVENT_TOPIC1)));
             if (tokenOwner == address(this)) {
-                uint256 allowanceGranted = abi.decode(HegotaLibrary.getEventData(edOracle, i, 0, 32), (uint256));
+                uint256 allowanceGranted = abi.decode(eventdatacopy(i, 0, 32), (uint256));
                 require(allowanceGranted == 0, "CircuitBreaker: unauthorized pool approval");
             }
         }

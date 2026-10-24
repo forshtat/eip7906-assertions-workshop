@@ -2,15 +2,15 @@
  * STEP 5 — Read the events: "I must receive at least N tokens, and none may leave".
  *
  * ETH balances are easy (step 4). For tokens, the natural thing to inspect is the event log.
- * See `contracts/assertions/TokenReceiveOnlyAssertion.sol`: `HegotaLibrary.query` walks every event
+ * See `contracts/assertions/TokenReceiveOnlyAssertion.sol`: `txtrace` walks every event
  * the body emitted:
  *
- *    EVENT_COUNT                total number of events
- *    EVENT_ADDRESS[i]           which contract emitted event i
- *    EVENT_TOPIC_CNT[i]         how many topics it has
- *    EVENT_TOPIC0..2[i]         the topics (asking for a topic that doesn't exist halts!)
+ *    TxTrace.EVENTS_COUNT         total number of events
+ *    TxTrace.EVENT_ADDRESS[i]    which contract emitted event i
+ *    TxTrace.EVENT_TOPIC_COUNT[i] how many topics it has
+ *    TxTrace.EVENT_TOPIC0..2[i]  the topics (asking for a topic that doesn't exist halts!)
  *
- * and `HegotaLibrary.getEventData(edOracle, i, dataOffset, length)` uses `EVENTDATACOPY` to copy
+ * and `eventdatacopy(i, dataOffset, length)` uses `EVENTDATACOPY` to copy
  * bytes of event i's non-indexed data. For an ERC-20 `Transfer(address indexed from, address indexed to, uint256 value)`
  * the amount is the first 32-byte word.
  *
@@ -26,8 +26,10 @@ import { TokenReceiveOnlyAssertionC } from "../lib/contracts.js";
 import { holdings, me, resetHoldings, run, showChange, swapFrame, world } from "../lib/scenario.js";
 import { postTx, selfVerify } from "../lib/frameTx.js";
 import { say, title, next, ok } from "../lib/output.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 5: a token assertion built on events (contracts/assertions/TokenReceiveOnlyAssertion.sol)");
+startStep(5);
 const { usdw, honestDex, evilDex } = world();
 await resetHoldings();
 const assertion = await deployOnce(me.key, "tokenReceiveOnly", TokenReceiveOnlyAssertionC.bytecode);
@@ -56,4 +58,5 @@ after = await holdings();
 showChange(before, after);
 say("\n  The evil dex tried to short-change you and sweep your approved USDW. Both show up as Transfer");
 say("  events, the assertion saw them, and the whole body was undone. You only paid gas.");
+finishStep(5);
 next("step_6_state_assertion");

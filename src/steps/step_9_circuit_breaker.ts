@@ -5,15 +5,15 @@
  * account. But smart contracts holding millions in DeFi reserves have the exact same problem:
  * one subtle bug in a "boring" maintenance or helper function can let an attacker drain the pool.
  *
- * See `contracts/LendingPool.sol` (and `contracts/shared/HegotaLibrary.sol`). With EIP-8141 and
+ * See `contracts/LendingPool.sol` (and `contracts/shared/Hegota.sol`). With EIP-8141 and
  * EIP-7906, `LendingPool` enforces an unbreakable on-chain Circuit Breaker on itself in two steps:
  *
  *   1. `withAssertion` modifier (`containsValidAssertion()`):
- *      Every state-changing function uses `HegotaLibrary.txParam` / `frameParam` / `frameDataLoad`
+ *      Every state-changing function uses `txparam` / `frameparam` / `framedataload`
  *      to verify that the enclosing Frame Transaction includes a `POST_TX` frame calling
  *      `pool.postTransactionAssertion()`. If a caller omits it, the pool refuses to execute at all.
  *
- *   2. `postTransactionAssertion()` (`POST_TX` + `HegotaLibrary.query` / `getEventData`):
+ *   2. `postTransactionAssertion()` (`POST_TX` + `txtrace` / `eventdatacopy`):
  *      After the transaction body finishes, the pool checks its own high-level invariants:
  *        - Solvency: `asset.balanceOf(address(this)) >= reserves`
  *        - No hidden approvals: walks `TXTRACE` events to ensure `pool` never emitted a non-zero
@@ -30,8 +30,10 @@ import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { rpc } from "../lib/rpc.js";
 import { readState, writeState } from "../lib/state.js";
 import { say, title, next, ok, bad } from "../lib/output.js";
+import { finishStep, startStep } from "../lib/progress.js";
 
 title("Step 9: DeFi protocol circuit breakers (contracts/LendingPool.sol)");
+startStep(9);
 const { usdw } = world();
 await resetHoldings();
 
@@ -79,7 +81,7 @@ say("\n① Calling the pool WITHOUT its circuit breaker POST_TX frame:");
 const noBreaker = await run([selfVerify(), poolCall("skim", [ATTACKER, parseEther("500")])]);
 await showPool();
 if (noBreaker.status !== "0x1") {
-  ok("Blocked in frame 1: `withAssertion` saw the missing POST_TX frame (via HegotaLibrary frame opcodes) and reverted.");
+  ok("Blocked in frame 1: `withAssertion` saw the missing POST_TX frame (via the frame opcodes) and reverted.");
 }
 
 say("\n② Honest deposit(10 USDW) WITH `pool.postTransactionAssertion()` attached as a POST_TX frame:");
@@ -105,4 +107,5 @@ if (approveTx.status !== "0x1") {
   ok("... but Frame 2 spotted the `Approval(pool, attacker, MAX)` event via TXTRACE and rolled the body back!");
 }
 
+finishStep(9);
 next("step_10_challenge");

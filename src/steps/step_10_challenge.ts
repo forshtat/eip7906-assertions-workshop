@@ -16,6 +16,7 @@ import { ATTACKER, VaultC } from "../lib/contracts.js";
 import { dryRun, me, run } from "../lib/scenario.js";
 import { postTx, selfVerify, senderCall } from "../lib/frameTx.js";
 import { say, title, ok, bad } from "../lib/output.js";
+import { startStep } from "../lib/progress.js";
 
 const useSolution = process.argv.includes("--solution");
 title(
@@ -23,6 +24,7 @@ title(
     ? "Step 10: reference solution (contracts/solutions/OwnerUnchangedAssertion.sol)"
     : "Step 10: your assertion (contracts/challenge/MyVaultAssertion.sol)",
 );
+startStep(10);
 
 let compiled;
 try {
@@ -60,7 +62,7 @@ if (allowsLegit && blocksAttack) {
   await run(attack);
   say("\n  The owner slot is untouched: the vault is still yours. 🎉");
   say("\nThat's the workshop. Ideas to keep going: protect slot 1 with a maximum value, forbid new contract");
-  say("deployments (HegotaLibrary.CONTRACT_COUNT), or combine this with the assertions from steps 4 to 6.");
+  say("deployments (`TxTrace.CODES_DEPLOYED`), or combine this with the assertions from steps 4 to 6.");
 } else {
   say("\nNot there yet. Edit contracts/challenge/MyVaultAssertion.sol and run this again.");
   process.exitCode = 1;
