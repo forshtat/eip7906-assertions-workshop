@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Hegota, TxTrace} from "../shared/Hegota.sol";
+import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
 
 /// @title NoBalanceDropsAssertion
 /// @notice Step 6 assertion: inspects storage slot diffs via TXTRACE rather than events.
 ///         Reverts if `balanceOf[owner]` (at mapping slot 0) decreased in any contract.
-contract NoBalanceDropsAssertion is Hegota {
+contract NoBalanceDropsAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP) {
     function assertNoBalanceDrops(address owner) external view {
         // Slot of `balanceOf[owner]` for any ERC-20 that keeps `balanceOf` at slot 0.
         bytes32 balanceSlot = keccak256(abi.encode(owner, uint256(0)));

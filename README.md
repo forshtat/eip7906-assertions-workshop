@@ -54,8 +54,8 @@ current text. The workshop follows **what the devnet does**:
 | `TXDIFF` (0xB8) | exists, **deliberately unused here** | removed from the spec |
 
 All custom opcodes (`TXTRACE`, `EVENTDATACOPY`, `TXPARAM`, `FRAMEDATALOAD`, `FRAMEPARAM`, ...) come from
-[hegota-frames](https://github.com/forshtat/hegota-frames-yul-library) through `contracts/shared/Hegota.sol`, so every
-contract and assertion is written in standard Solidity: `contract MyAssertion is Hegota`, then
+[hegota-frames](https://github.com/forshtat/hegota-frames-yul-library), so every contract and assertion is written in
+standard Solidity: `contract MyAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP)`, then
 `txtrace(i, TxTrace.BALANCE_AFTER)`.
 
 Run the steps in order. Step 1 **resets** the workshop (it deletes `.workshop-state.json`), and every later step refuses
@@ -72,7 +72,6 @@ touches the devnet. CI runs it on every push.
 
 ```
 contracts/
-  shared/Hegota.sol                            the Hegotá opcodes as functions (hegota-frames' HegotaSupport) + parameter enums
   Playground.sol                               Token, HonestDex, EvilDex, Spammer, Vault
   LendingPool.sol                              Step 9 DeFi pool with self-enforced circuit breaker
   assertions/EthSpendLimitAssertion.sol        Step 4 assertion

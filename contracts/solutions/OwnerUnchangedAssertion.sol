@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Hegota, TxTrace} from "../shared/Hegota.sol";
+import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
 
 /// @title OwnerUnchangedAssertion
 /// @notice Reference solution for the Step 10 challenge: reverts if slot 0 (`owner`)
 ///         of `vault` was modified during the transaction.
-contract OwnerUnchangedAssertion is Hegota {
+contract OwnerUnchangedAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP) {
     function assertOwnerUnchanged(address vault) external view {
         uint256 count = txtrace(0, TxTrace.SLOTS_CHANGED);
         for (uint256 i = 0; i < count; i++) {

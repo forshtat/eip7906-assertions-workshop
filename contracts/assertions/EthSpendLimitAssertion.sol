@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Hegota, TxTrace} from "../shared/Hegota.sol";
+import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
 
 /// @title EthSpendLimitAssertion
 /// @notice Step 4 assertion: reverts if `owner` spent more than `maxSpend` wei of ETH
 ///         (excluding the upfront EIP-8141 gas pre-charge when `owner` is the gas payer).
-contract EthSpendLimitAssertion is Hegota {
+contract EthSpendLimitAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP) {
     function assertMaxEthSpend(address owner, uint256 maxSpend) external view {
         uint256 spent = 0;
         uint256 count = txtrace(0, TxTrace.BALANCES_CHANGED);

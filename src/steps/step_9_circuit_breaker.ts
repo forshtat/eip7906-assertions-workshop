@@ -5,7 +5,7 @@
  * account. But smart contracts holding millions in DeFi reserves have the exact same problem:
  * one subtle bug in a "boring" maintenance or helper function can let an attacker drain the pool.
  *
- * See `contracts/LendingPool.sol` (and `contracts/shared/Hegota.sol`). With EIP-8141 and
+ * See `contracts/LendingPool.sol`. With EIP-8141 and
  * EIP-7906, `LendingPool` enforces an unbreakable on-chain Circuit Breaker on itself in two steps:
  *
  *   1. `withAssertion` modifier (`containsValidAssertion()`):

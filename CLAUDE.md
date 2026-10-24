@@ -11,10 +11,10 @@ Hands-on workshop for **EIP-7906 (Transaction Assertions)** and **EIP-8141 (Fram
 1. **All Solidity code lives in `.sol` files under `contracts/`**:
    - Never embed inline Solidity strings or inline Yul strings in TypeScript files.
    - Demo contracts, DeFi protocols, transaction assertions, the participant challenge stub, and the reference solution must all be real `.sol` files under `contracts/`.
-2. **All custom opcodes come from the `hegota-frames` package, through `contracts/shared/Hegota.sol`**:
+2. **All custom opcodes come from the `hegota-frames` package**:
    - Standard `solc` does not emit the Hegotá devnet opcodes (`TXTRACE`, `EVENTDATACOPY`, `TXPARAM`, `FRAMEDATALOAD`, `FRAMEPARAM`, ...).
    - `hegota-frames` (https://github.com/forshtat/hegota-frames-yul-library) provides `HegotaSupport`: its constructor creates one small Yul helper per opcode, and `txtrace()`, `eventdatacopy()`, `txparam()`, `frameparam()`, `framedataload()` ... call them. Parameter ids are enums (`TxTrace.SLOTS_CHANGED`, `TxParam.FRAME_COUNT`, ...).
-   - `contracts/shared/Hegota.sol` fixes the workshop's devnet once (`abstract contract Hegota is HegotaSupport(Devnet.EIP7906_WORKSHOP)`). Assertions and protocol contracts write `contract X is Hegota` and are otherwise standard Solidity.
+   - A contract writes `import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";` and `contract X is HegotaSupport(Devnet.EIP7906_WORKSHOP)`; the rest is standard Solidity.
    - Never paste opcode bytes into this repo. A new or changed opcode is a change in hegota-frames.
 
 ## Commands
@@ -45,7 +45,7 @@ Hands-on workshop for **EIP-7906 (Transaction Assertions)** and **EIP-8141 (Fram
 ## Architecture
 
 ### `contracts/`
-- `contracts/shared/Hegota.sol` — `abstract contract Hegota`: the Hegotá opcodes of this devnet as functions (from hegota-frames' `HegotaSupport`) and the parameter enums:
+- Contracts that use the Hegotá opcodes inherit `HegotaSupport` from hegota-frames (see rule 2):
   - **EIP-7906** (`POST_TX` frame and its call subtree only): `txtrace(index, TxTrace.X)` (`0xB6`) and `eventdatacopy(...)` (`0xB7`).
   - **EIP-8141** (any frame in a FrameTx): `txparam` (`0xB0`), `framedataload` (`0xB1`), `frameparam` (`0xB3`), plus `approve` and `sigparam`.
 - `contracts/Playground.sol` — Demo world contracts (`Token`, `HonestDex`, `EvilDex`, `Spammer`, `Vault`).

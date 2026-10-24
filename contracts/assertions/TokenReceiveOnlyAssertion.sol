@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {Hegota, TxTrace} from "../shared/Hegota.sol";
+import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
 
 /// @title TokenReceiveOnlyAssertion
 /// @notice Step 5 assertion: inspects the transaction's emitted events via TXTRACE and
 ///         EVENTDATACOPY. Reverts if any ERC-20 token leaves `owner`, or if `owner`
 ///         receives fewer than `minReceived` of `token`.
-contract TokenReceiveOnlyAssertion is Hegota {
+contract TokenReceiveOnlyAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP) {
     // System address that emits Transfer-shaped logs for native ETH value transfers.
     address internal constant SYSTEM_ADDRESS = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
 

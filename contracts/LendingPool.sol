@@ -2,15 +2,15 @@
 pragma solidity ^0.8.28;
 
 import "./Playground.sol";
-import {Hegota, TxParam, FrameParam, FrameMode, TxTrace} from "./shared/Hegota.sol";
+import {HegotaSupport, Devnet, TxParam, FrameParam, FrameMode, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
 
 /// @title LendingPool
 /// @notice DeFi pool with an on-chain Circuit Breaker enforced via EIP-8141 and EIP-7906 (Step 9).
 ///         Every state-changing entry point carries `withAssertion`, which inspects the outer
-///         Frame Transaction (via the `Hegota` frame opcodes) to require a `POST_TX` frame calling
+///         Frame Transaction (via the `HegotaSupport` frame opcodes) to require a `POST_TX` frame calling
 ///         `this.postTransactionAssertion()`. After the body runs, `postTransactionAssertion()`
 ///         checks pool solvency and scans `TXTRACE` events for unauthorized token approvals.
-contract LendingPool is Hegota {
+contract LendingPool is HegotaSupport(Devnet.EIP7906_WORKSHOP) {
     uint256 public reserves; // slot 0: accounted token reserves
     Token public immutable asset;
 

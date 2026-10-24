@@ -10,7 +10,7 @@
  * "Rolled back" is the important part. The tx stays valid and included (status 0), the VERIFY frame's
  * effects (nonce, gas payment) are kept, so the block builder still gets paid. Only the damage is undone.
  *
- * See `contracts/assertions/EthSpendLimitAssertion.sol` (and `contracts/shared/Hegota.sol`).
+ * See `contracts/assertions/EthSpendLimitAssertion.sol`.
  * `TXTRACE(param, index)` is a "state diff viewer". The params used in `EthSpendLimitAssertion.sol`:
  *    TxTrace.BALANCES_CHANGED    how many addresses changed balance
  *    TxTrace.BALANCE_ADDRESS[i]  which address entry i is
