@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import "./Playground.sol";
-import {HegotaSupport, Devnet, TxParam, FrameParam, FrameMode, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxParam, FrameParam, FrameMode, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /// @title LendingPool
 /// @notice DeFi pool with an on-chain Circuit Breaker enforced via EIP-8141 and EIP-7906 (Step 9).

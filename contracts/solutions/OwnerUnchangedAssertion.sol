@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /// @title OwnerUnchangedAssertion
 /// @notice Reference solution for the Step 10 challenge: reverts if slot 0 (`owner`)

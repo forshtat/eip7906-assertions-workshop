@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /// @title EthSpendLimitAssertion
 /// @notice Step 4 assertion: reverts if `owner` spent more than `maxSpend` wei of ETH

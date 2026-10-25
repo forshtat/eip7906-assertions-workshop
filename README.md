@@ -54,7 +54,7 @@ current text. The workshop follows **what the devnet does**:
 | `TXDIFF` (0xB8) | exists, **deliberately unused here** | removed from the spec |
 
 All custom opcodes (`TXTRACE`, `EVENTDATACOPY`, `TXPARAM`, `FRAMEDATALOAD`, `FRAMEPARAM`, ...) come from
-[hegota-frames](https://github.com/forshtat/hegota-frames-yul-library), so every contract and assertion is written in
+[@forshtat/hegota-support](https://github.com/forshtat/hegota-support), so every contract and assertion is written in
 standard Solidity: `contract MyAssertion is HegotaSupport(Devnet.EIP7906_WORKSHOP)`, then
 `txtrace(i, TxTrace.BALANCE_AFTER)`.
 
@@ -65,7 +65,7 @@ approvals and balances belong to that key.
 ## Checking your checkout
 
 `yarn verify` typechecks and runs an offline wiring check (compiles every Solidity contract and assertion in
-`contracts/`, checks the hegota-frames helpers are embedded, and tests the step order and frame-transaction signing). It never
+`contracts/`, checks the @forshtat/hegota-support helpers are embedded, and tests the step order and frame-transaction signing). It never
 touches the devnet. CI runs it on every push.
 
 ## How the code is organised

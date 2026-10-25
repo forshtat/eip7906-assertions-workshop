@@ -35,7 +35,7 @@ const EXPLANATIONS: Record<number, Explanation> = {
     story:
       "EIP-7906 adds a POST_TX frame mode. It runs last, read-only, and can look at what the transaction did using the TXTRACE opcode. If it reverts, the body of the transaction is undone, while the transaction stays included and the gas stays paid. Here the POST_TX frame says 'no more than 0.011 ETH may leave my account'. First an honest swap passes. Then a dapp slips in a 0.5 ETH transfer to the attacker, and the assertion rolls everything back.",
     components:
-      "contracts/assertions/EthSpendLimitAssertion.sol reads the balance diffs through contracts/shared/HegotaLibrary.sol, which wraps the devnet's custom opcodes so the assertion is plain Solidity. The gas payer is charged the maximum gas up front, which shows as a balance change, so the assertion subtracts it.",
+      "contracts/assertions/EthSpendLimitAssertion.sol reads the balance diffs. It inherits HegotaSupport from @forshtat/hegota-support, which gives plain Solidity the devnet's custom opcodes as functions. The gas payer is charged the maximum gas up front, which shows as a balance change, so the assertion subtracts it.",
     watch: "In the second case frames 1 and 2 report success and frame 3 fails, yet your balance only drops by gas.",
     why: "The check is enforced by the chain, not by a wallet UI that the dapp could bypass. You pay for the attempt, but the damage is undone.",
   },
@@ -75,7 +75,7 @@ const EXPLANATIONS: Record<number, Explanation> = {
     story:
       "So far the user attached the assertions. Here a protocol protects itself. LendingPool refuses to run unless the transaction carries a POST_TX frame that calls pool.postTransactionAssertion(), and that assertion checks the pool's solvency and that it never approved anyone. The pool has two real bugs: skim() drains reserves and approveRouter() gives the attacker an allowance. You try a call without the breaker, an honest deposit, then both exploits.",
     components:
-      "contracts/LendingPool.sol with its withAssertion modifier, which uses TXPARAM, FRAMEPARAM and FRAMEDATALOAD (wrapped in HegotaLibrary) to inspect the enclosing transaction's frames, and postTransactionAssertion, which uses TXTRACE.",
+      "contracts/LendingPool.sol with its withAssertion modifier, which uses TXPARAM, FRAMEPARAM and FRAMEDATALOAD (exposed by HegotaSupport) to inspect the enclosing transaction's frames, and postTransactionAssertion, which uses TXTRACE.",
     watch: "In both exploits frame 1 succeeds and the final POST_TX frame reverts. The pool's balance and the attacker's allowance are unchanged afterwards.",
     why: "A contract can enforce its own invariants even if one of its functions is buggy. This is a circuit breaker enforced by the protocol, not by monitoring after the money is gone.",
   },
@@ -83,7 +83,7 @@ const EXPLANATIONS: Record<number, Explanation> = {
     story:
       "Your turn. Edit contracts/challenge/MyVaultAssertion.sol so it allows setSecret(42) and blocks transferOwnership(attacker) on a Vault. The script compiles your Solidity, checks both cases with free dry-runs, and only if you got both right sends the blocked attack for real so you can watch it fail on-chain.",
     components:
-      "solc runs in-process (src/lib/compile.ts), HegotaLibrary gives you the storage diff, and 'yarn step_10_solution' runs the reference solution in contracts/solutions/OwnerUnchangedAssertion.sol.",
+      "solc runs in-process (src/lib/compile.ts), HegotaSupport gives you the storage diff, and 'yarn step_10_solution' runs the reference solution in contracts/solutions/OwnerUnchangedAssertion.sol.",
     watch: "Two ticks: one for the harmless update allowed, one for the attack blocked. A red cross names which direction your assertion got wrong.",
     why: "A good assertion is narrow. One that blocks everything is as broken as one that blocks nothing.",
   },

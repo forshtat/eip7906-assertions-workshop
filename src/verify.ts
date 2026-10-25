@@ -2,10 +2,10 @@
  * Offline wiring check (no network, no funds): `yarn verify`. Run by CI on every push.
  *
  *   - every Solidity contract and assertion in `contracts/` compiles cleanly
- *   - the assertions and the circuit-breaker pool carry the hegota-frames helpers for the opcodes they use
+ *   - the assertions and the circuit-breaker pool carry the @forshtat/hegota-support helpers for the opcodes they use
  *     (TXTRACE 0xB6, EVENTDATACOPY 0xB7, TXPARAM 0xB0, FRAMEDATALOAD 0xB1, FRAMEPARAM 0xB3)
  *   - a frame transaction built here is a type 0x06 transaction, signs deterministically and recovers to its sender
- *     (the codec itself is tested in hegota-frames)
+ *     (the codec itself is tested in @forshtat/hegota-support)
  *   - the step order is enforced: step 1 resets, every other step needs the playground of step 2, and a key that is
  *     not the one step 1 recorded is refused
  *   - every package.json script points at a file that exists

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /// @title TokenReceiveOnlyAssertion
 /// @notice Step 5 assertion: inspects the transaction's emitted events via TXTRACE and

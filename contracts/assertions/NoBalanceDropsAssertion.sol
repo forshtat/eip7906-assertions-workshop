@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /// @title NoBalanceDropsAssertion
 /// @notice Step 6 assertion: inspects storage slot diffs via TXTRACE rather than events.

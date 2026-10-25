@@ -1,13 +1,13 @@
 /**
- * Frame transactions for the ethrex Hegota devnet. The encoding, signing and hashing come from `hegota-frames`; this
+ * Frame transactions for the ethrex Hegota devnet. The encoding, signing and hashing come from `@forshtat/hegota-support`; this
  * file keeps what is specific to the workshop: the frame vocabulary used in every step, and its gas numbers.
  */
-import { profile } from "hegota-frames/profiles/ethrex-hegota-devnet";
-import * as lib from "hegota-frames/tx";
+import { profile } from "@forshtat/hegota-support/profiles/ethrex-hegota-devnet";
+import * as lib from "@forshtat/hegota-support/tx";
 import type { Address, Hex } from "viem";
 
-export type { Frame, FrameTx } from "hegota-frames/tx";
-import type { Frame, FrameTx } from "hegota-frames/tx";
+export type { Frame, FrameTx } from "@forshtat/hegota-support/tx";
+import type { Frame, FrameTx } from "@forshtat/hegota-support/tx";
 
 export const encodeTx = (tx: FrameTx): Hex => lib.encodeTx(profile, tx);
 export const sigHash = (tx: FrameTx): Hex => lib.sigHash(profile, tx);

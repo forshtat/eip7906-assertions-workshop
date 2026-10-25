@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupport.sol";
+import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";
 
 /**
  * YOUR TURN — write the assertion for step 10, then run:   yarn step_10_challenge
@@ -14,7 +14,7 @@ import {HegotaSupport, Devnet, TxTrace} from "hegota-frames/contracts/HegotaSupp
  * A dapp asks you to sign a transaction that "updates your vault's secret". Your job is to write an
  * assertion that lets `setSecret(42)` through but blocks anything that changes who OWNS the vault.
  *
- * Your contract inherits HegotaSupport (hegota-frames), which gives you the EIP-7906 opcodes as functions. The index
+ * Your contract inherits HegotaSupport (from the hegota-support package), which gives you the EIP-7906 opcodes as functions. The index
  * comes first, then the name of what you want to know (the same order as the TXTRACE opcode's stack):
  *    txtrace(0, TxTrace.SLOTS_CHANGED)    how many (contract, slot) pairs changed
  *    txtrace(i, TxTrace.SLOT_ADDRESS)     the contract that owns changed slot i
