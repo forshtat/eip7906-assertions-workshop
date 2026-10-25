@@ -15,7 +15,7 @@ yarn install
 yarn step_1_check
 ```
 
-Then run the steps in order. Each one ends by telling you the next command.
+Then run the steps in order. Each one starts with a short explanation of what is going on, which components are involved, what to watch for and why it matters, and ends by telling you the next command.
 
 | # | Command | You learn |
 |---|---------|-----------|

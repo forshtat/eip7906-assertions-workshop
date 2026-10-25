@@ -9,11 +9,13 @@
  *   - the step order is enforced: step 1 resets, every other step needs the playground of step 2, and a key that is
  *     not the one step 1 recorded is refused
  *   - every package.json script points at a file that exists
+ *   - every numbered step has a printed explanation
  */
 import { existsSync, readFileSync } from "node:fs";
 import { recoverAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { compileSol } from "./lib/compile.js";
+import { renderExplanation } from "./lib/explain.js";
 import {
   EthSpendLimitAssertionC,
   EvilDexC,
@@ -97,6 +99,12 @@ const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts as Reco
 for (const [name, cmd] of Object.entries(scripts)) {
   const file = cmd.match(/src\/\S+\.ts/)?.[0];
   if (file) check(`script ${name} → ${file} exists`, existsSync(file));
+}
+
+// 5. every numbered step prints an explanation
+for (const name of Object.keys(scripts)) {
+  const n = /^step_(\d+)_/.exec(name)?.[1];
+  if (n && !name.endsWith("_solution")) check(`step ${n} has a printed explanation`, renderExplanation(Number(n)) !== undefined);
 }
 
 if (failures) {

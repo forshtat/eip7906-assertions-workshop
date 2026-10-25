@@ -1,7 +1,14 @@
 import { MODE, type Frame, type FrameTx } from "./frameTx.js";
 import { EXPLORER_URL } from "./config.js";
+import { renderExplanation } from "./explain.js";
 
-export const title = (t: string) => console.log(`\n\x1b[1m━━ ${t} ━━\x1b[0m`);
+/** Prints the step title and, for "Step N: ...", the plain-language explanation of that step. */
+export const title = (t: string) => {
+  console.log(`\n\x1b[1m━━ ${t} ━━\x1b[0m`);
+  const n = /^Step (\d+)\b/.exec(t)?.[1];
+  const text = n ? renderExplanation(Number(n)) : undefined;
+  if (text) console.log(`\n${text}\n`);
+};
 export const say = (...a: unknown[]) => console.log(...a);
 export const ok = (t: string) => console.log(`\x1b[32m✔ ${t}\x1b[0m`);
 export const bad = (t: string) => console.log(`\x1b[31m✘ ${t}\x1b[0m`);
