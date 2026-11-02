@@ -17,7 +17,7 @@ Hands-on workshop for **EIP-7906 (Transaction Assertions)** and **EIP-8141 (Fram
    - A contract writes `import {HegotaSupport, Devnet, TxTrace} from "@forshtat/hegota-support/contracts/HegotaSupport.sol";` and `contract X is HegotaSupport(Devnet.EIP7906_WORKSHOP)`; the rest is standard Solidity.
    - Never paste opcode bytes into this repo. A new or changed opcode is a change in @forshtat/hegota-support.
 
-   - Exception: `contracts/fork/` holds an optional example for the EIP-8141 solc fork (https://github.com/chiranjeev13/solidity), which has the EIP-8141 opcodes as Yul builtins (no `TXTRACE`/`EVENTDATACOPY`). It is built with `yarn compile_fork <solc>`, is not part of `yarn verify`, and nothing else in the repo depends on it.
+   - Exception: `contracts/fork/` holds a very experimental and untested optional example for the EIP-8141 solc fork (https://github.com/chiranjeev13/solidity), which has the EIP-8141 opcodes as Yul builtins (no `TXTRACE`/`EVENTDATACOPY`). It is built with `yarn compile_fork <solc>`, is not part of `yarn verify`, and nothing else in the repo depends on it.
 
 ## Commands
 
