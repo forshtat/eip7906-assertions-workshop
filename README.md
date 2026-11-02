@@ -68,6 +68,10 @@ approvals and balances belong to that key.
 `contracts/`, checks the @forshtat/hegota-support helpers are embedded, and tests the step order and frame-transaction signing). It never
 touches the devnet. CI runs it on every push.
 
+### Optional: the EIP-8141 solc fork
+
+The assertions here are written for vanilla `solc` plus `@forshtat/hegota-support`, and that stays the workshop's way: the library covers both the EIP-8141 opcodes and the EIP-7906 ones (`TXTRACE`, `EVENTDATACOPY`). A community fork of the compiler, [chiranjeev13/solidity](https://github.com/chiranjeev13/solidity) (release `v0.8.38-eip8141.0`), teaches inline assembly the EIP-8141 opcodes as Yul builtins (`txparam`, `frameparam`, `approve`, ...), enabled by the EVM version `cancun+eip8141`. It does **not** have `TXTRACE` or `EVENTDATACOPY`, so it cannot replace the library for an assertion that reads the trace. [`contracts/fork/ForkSolcPostTxGuard.sol`](contracts/fork/ForkSolcPostTxGuard.sol) shows what it can do: a guard that reverts unless it runs in the `POST_TX` frame, with no base contract and no helper to deploy. `yarn compile_fork /path/to/solc` compiles it with the fork and checks that `TXPARAM` and `FRAMEPARAM` are in the bytecode. It needs the fork's `solc` binary (from the release page, or built from source) and is not part of `yarn verify`. It has been compiled but not yet run on the devnet.
+
 ## How the code is organised
 
 ```
@@ -79,6 +83,7 @@ contracts/
   assertions/NoBalanceDropsAssertion.sol       Step 6 assertion
   challenge/MyVaultAssertion.sol               Step 10 challenge stub (yours to edit)
   solutions/OwnerUnchangedAssertion.sol        Step 10 reference solution
+  fork/ForkSolcPostTxGuard.sol                 Optional: EIP-8141 solc fork example (yarn compile_fork)
 src/
   steps/       one file per step: the story and the frame transactions
   lib/

@@ -17,7 +17,8 @@
     "step_10_challenge": "tsx src/steps/step_10_challenge.ts",
     "step_10_solution": "tsx src/steps/step_10_challenge.ts --solution",
     "typecheck": "tsc --noEmit",
-    "verify": "tsc --noEmit && tsx src/verify.ts"
+    "verify": "tsc --noEmit && tsx src/verify.ts",
+    "compile_fork": "tsx src/fork_solc.ts"
   },
   "engines": {
     "node": ">=20.12"
